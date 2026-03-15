@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EVO Café — Menu</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════
+     HERO
+═══════════════════════════════════════ -->
+<div class="hero">
+  <div class="hero-eyebrow">Welcome to</div>
+  <div class="logo">EVO</div>
+  <div class="logo-tagline">Café & Drinks · القائمة الكاملة</div>
+  <div class="hero-rule">
+    <div class="hero-rule-line"></div>
+    <div class="hero-rule-diamond"></div>
+    <div class="hero-rule-line"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     NAVIGATION
+═══════════════════════════════════════ -->
+<nav class="nav">
+  <button class="nav-btn active" onclick="show('all', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+    </svg>
+    الكل
+  </button>
+  <button class="nav-btn" onclick="show('hotcoffee', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M17 8h1a4 4 0 0 1 0 8h-1"/>
+      <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/>
+      <line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/>
+    </svg>
+    قهوة ساخنة
+  </button>
+  <button class="nav-btn" onclick="show('espresso', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
+      <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4Z"/>
+    </svg>
+    إسبريسو
+  </button>
+  <button class="nav-btn" onclick="show('hotdrinks', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+      <line x1="4" y1="22" x2="4" y2="15"/>
+    </svg>
+    مشروبات ساخنة
+  </button>
+  <button class="nav-btn" onclick="show('hotmilk', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8 2h8l1 6H7L8 2z"/>
+      <path d="M7 8c0 0-2 1.5-2 5s2 9 2 9h10s2-4.5 2-9-2-5-2-5"/>
+    </svg>
+    حليب ساخن
+  </button>
+  <button class="nav-btn" onclick="show('icecoffee', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+      <path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+    </svg>
+    قهوة باردة
+  </button>
+  <button class="nav-btn" onclick="show('frappe', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2c0 0-8 3-8 10v2h16v-2C20 5 12 2 12 2z"/>
+      <rect x="8" y="14" width="8" height="8" rx="1"/>
+    </svg>
+    فرابيه
+  </button>
+  <button class="nav-btn" onclick="show('icematcha', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M17 8C8 10 5.9 16.17 3.82 21"/>
+      <path d="M9.1 8.1C11 10 12 12 12 17"/>
+      <path d="M14.5 8C14.5 8 15 12 13 15"/>
+    </svg>
+    ماتشا
+  </button>
+  <button class="nav-btn" onclick="show('juice', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 2h6l1 4H8L9 2z"/>
+      <path d="M3 6h18l-2 14H5L3 6z"/>
+    </svg>
+    عصائر
+  </button>
+  <button class="nav-btn" onclick="show('mixsoda', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72"/>
+      <path d="M15.44 2.75c-4.37 6.03-6.02 9.42-8.03 17.72"/>
+    </svg>
+    ميكس سودا
+  </button>
+  <button class="nav-btn" onclick="show('smoothie', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M7 3h10l-1.5 9H8.5L7 3z"/>
+      <path d="M8.5 12S6 14 6 18h12c0-4-2.5-6-2.5-6"/>
+      <line x1="12" y1="18" x2="12" y2="21"/>
+    </svg>
+    سموثي
+  </button>
+  <button class="nav-btn" onclick="show('milkshake', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8 2h8v3l1 1v14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V6l1-1V2z"/>
+      <line x1="12" y1="2" x2="12" y2="5"/>
+    </svg>
+    ميلك شيك
+  </button>
+  <button class="nav-btn" onclick="show('waffle', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2"/>
+      <line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/>
+      <line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>
+    </svg>
+    وافل
+  </button>
+  <button class="nav-btn" onclick="show('desserts', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+    </svg>
+    حلويات
+  </button>
+  <button class="nav-btn" onclick="show('softdrinks', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
+      <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4Z"/>
+      <line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/>
+    </svg>
+    مشروبات
+  </button>
+</nav>
+
+<!-- ═══════════════════════════════════════
+     CONTENT
+═══════════════════════════════════════ -->
+<div class="page">
+
+  <!-- HOT COFFEE -->
+  <div id="s-hotcoffee" class="cat-block">
+    <div class="cat-head">
+      <div class="cat-icon">
+        <svg viewBox="0 0 24 24"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>
+      </div>
+      <div class="cat-name">قهوة ساخنة</div>
+    </div>
+    <div class="cat-en">HOT COFFEE</div>
+    <div class="cat-rule"></div>
+    <div class="grid">
+      <div class="card"><div class="card-left"><div class="card-name">قهوة فاتح ساده</div></div><div class="card-price">25/40 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">قهوة ساده وسط</div></div><div class="card-price">25/40 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">قهوة محوج فاتح</div></div><div class="card-price">30/45 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">قهوة محوج وسط</div></div><div class="card-price">30/45 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">قهوة ساده غامق</div></div><div class="card-price">25/30 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">قهوة محوج غامق</div></div><div class="card-price">30/45 <small>ج</small></div></div>
+    </div>
+  </div>
+  <hr class="sep">
+
+  <!-- ESPRESSO -->
+  <div id="s-espresso" class="cat-block">
+    <div class="cat-head">
+      <div class="cat-icon">
+        <svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4Z"/></svg>
+      </div>
+      <div class="cat-name">إسبريسو</div>
+    </div>
+    <div class="cat-en">ESPRESSO COFFEE</div>
+    <div class="cat-rule"></div>
+    <div class="grid">
+      <div class="card"><div class="card-left"><div class="card-name">إسبريسو سنجل</div></div><div class="card-price">35 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">إسبريسو دبل</div></div><div class="card-price">45 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">أمريكانو</div></div><div class="card-price">50 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">ميكاتو</div></div><div class="card-price">40/50 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">إسبريسو أفوكادو</div><div class="card-note">إسبريسو + آيس كريم</div></div><div class="card-price">50 <small>ج</small></div></div>
+    </div>
+    <div class="sub-head">إسبريسو وحليب &nbsp; Espresso & Milk</div>
+    <div class="grid">
+      <div class="card"><div class="card-left"><div class="card-name">كابتشينو</div></div><div class="card-price">60 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">فلات وايت</div></div><div class="card-price">60 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">لاتيه</div></div><div class="card-price">55 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">سبانش لاتيه</div></div><div class="card-price">70 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">بلو لاتيه</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">استروبلي لاتيه</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">موكا</div></div><div class="card-price">70 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">وايت موكا</div></div><div class="card-price">70 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">كورتادو</div></div><div class="card-price">50 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">كراميل ميكاتو</div></div><div class="card-price">70 <small>ج</small></div></div>
+    </div>
+  </div>
+  <hr class="sep">
+
+  <!-- HOT DRINKS -->
+  <div id="s-hotdrinks" class="cat-block">
+    <div class="cat-head">
+      <div class="cat-icon">
+        <svg viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+      </div>
+      <div class="cat-name">مشروبات ساخنة</div>
+    </div>
+    <div class="cat-en">HOT DRINKS</div>
+    <div class="cat-rule"></div>
+    <div class="grid">
+      <div class="card"><div class="card-left"><div class="card-name">شاي فتله</div></div><div class="card-price">20 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">شاي كلاسيك</div></div><div class="card-price">20 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">شاي أخضر</div></div><div class="card-price">20 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">براد شاي</div></div><div class="card-price">50 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">بنسون</div></div><div class="card-price">20 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">نعناع</div></div><div class="card-price">20 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">كركديه</div></div><div class="card-price">20 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">أعشاب</div><div class="card-note">قرفه – زنجبيل – عسل</div></div><div class="card-price">25 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">هوت سيدر</div></div><div class="card-price">40 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">هوت أورانج سيدر 4</div></div><div class="card-price">40 <small>ج</small></div></div>
+    </div>
+  </div>
+  <hr class="sep">
+
+  <!-- HOT MILK -->
+  <div id="s-hotmilk" class="cat-block">
+    <div class="cat-head">
+      <div class="cat-icon">
+        <svg viewBox="0 0 24 24"><path d="M8 2h8l1 6H7L8 2z"/><path d="M7 8c0 0-2 1.5-2 5s2 9 2 9h10s2-4.5 2-9-2-5-2-5"/></svg>
+      </div>
+      <div class="cat-name">حليب ساخن</div>
+    </div>
+    <div class="cat-en">HOT MILK</div>
+    <div class="cat-rule"></div>
+    <div class="grid">
+      <div class="card"><div class="card-left"><div class="card-name">بندق</div></div><div class="card-price">40/55 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">بندق فليفر</div></div><div class="card-price">45 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">فرنساوي</div></div><div class="card-price">40/50 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">نسكافيه بالحليب</div></div><div class="card-price">50 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">قرفة بالحليب</div></div><div class="card-price">45 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">شاي بالحليب</div></div><div class="card-price">35 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">سحلب</div></div><div class="card-price">50 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">سحلب مكسرات</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">سحلب فواكه</div></div><div class="card-price">70 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">سحلب ايفو</div></div><div class="card-price">75 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">هوت شوكليت</div></div><div class="card-price">50 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">هوت شوكليت مارشملو</div></div><div class="card-price">60 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">هوت شوكليت ايفو</div></div><div class="card-price">75 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">هوت لوتس</div></div><div class="card-price">60 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">هوت أوريو</div></div><div class="card-price">60 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">ماتشا حليب جوز هند وفانيليا</div></div><div class="card-price">80 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">ماتشا فروت</div><div class="card-note">اختيارك</div></div><div class="card-price">80 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">بوبا ماتشا</div></div><div class="card-price">75 <small>ج</small></div></div>
+    </div>
+  </div>
+  <hr class="sep">
+
+  <!-- ICE COFFEE -->
+  <div id="s-icecoffee" class="cat-block">
+    <div class="cat-head">
+      <div class="cat-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      </div>
+      <div class="cat-name">قهوة باردة</div>
+    </div>
+    <div class="cat-en">ICE COFFEE</div>
+    <div class="cat-rule"></div>
+    <div class="grid">
+      <div class="card"><div class="card-left"><div class="card-name">آيس لاتيه</div></div><div class="card-price">60 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">آيس سبانش لاتيه</div></div><div class="card-price">70 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">آيس بلو لاتيه</div></div><div class="card-price">70 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">آيس استروبلي لاتيه</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">آيس موكا دارك</div></div><div class="card-price">70 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">آيس tea</div></div><div class="card-price">45 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">آيس موكا وايت</div></div><div class="card-price">70 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">آيس كراميل ميكاتو</div></div><div class="card-price">70 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">آيس كابتشينو</div></div><div class="card-price">70 <small>ج</small></div></div>
+    </div>
+  </div>
+  <hr class="sep">
+
+  <!-- FRAPPE -->
+  <div id="s-frappe" class="cat-block">
+    <div class="cat-head">
+      <div class="cat-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2c0 0-8 3-8 10v2h16v-2C20 5 12 2 12 2z"/><rect x="8" y="14" width="8" height="8" rx="1"/></svg>
+      </div>
+      <div class="cat-name">فرابيه كوفي</div>
+    </div>
+    <div class="cat-en">FRAPPÉ COFFEE</div>
+    <div class="cat-rule"></div>
+    <div class="grid">
+      <div class="card"><div class="card-left"><div class="card-name">فرابيه موكا دارك</div></div><div class="card-price">70 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">فرابيه موكا وايت</div></div><div class="card-price">70 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">فرابيه كراميل</div></div><div class="card-price">70 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">فرابيه فانيليا</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">فرابيه شوكليت</div></div><div class="card-price">70 <small>ج</small></div></div>
+    </div>
+  </div>
+  <hr class="sep">
+
+  <!-- ICE MATCHA -->
+  <div id="s-icematcha" class="cat-block">
+    <div class="cat-head">
+      <div class="cat-icon">
+        <svg viewBox="0 0 24 24"><path d="M17 8C8 10 5.9 16.17 3.82 21"/><path d="M9.1 8.1C11 10 12 12 12 17"/><path d="M14.5 8C14.5 8 15 12 13 15"/></svg>
+      </div>
+      <div class="cat-name">آيس ماتشا</div>
+    </div>
+    <div class="cat-en">ICE MATCHA</div>
+    <div class="cat-rule"></div>
+    <div class="grid">
+      <div class="card"><div class="card-left"><div class="card-name">ماتشا لاتيه</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">ماتشا عسل</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">ماتشا حليب مكسف</div></div><div class="card-price">70 <small>ج</small></div></div>
+    </div>
+  </div>
+  <hr class="sep">
+
+  <!-- JUICE -->
+  <div id="s-juice" class="cat-block">
+    <div class="cat-head">
+      <div class="cat-icon">
+        <svg viewBox="0 0 24 24"><path d="M9 2h6l1 4H8L9 2z"/><path d="M3 6h18l-2 14H5L3 6z"/></svg>
+      </div>
+      <div class="cat-name">عصير طازج</div>
+    </div>
+    <div class="cat-en">FRESH JUICE</div>
+    <div class="cat-rule"></div>
+    <div class="grid">
+      <div class="card"><div class="card-left"><div class="card-name">مانجا</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">فراولة</div></div><div class="card-price">60 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">برتقال</div></div><div class="card-price">60 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">جوافة</div></div><div class="card-price">60 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">بطيخ</div></div><div class="card-price">60 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">كيوي</div></div><div class="card-price">70 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">أفوكادو</div></div><div class="card-price">90 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">أفوكادو مكسرات</div></div><div class="card-price">110 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">جوافة حليب</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">فراولة حليب</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">موز</div></div><div class="card-price">60 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">ليمون</div></div><div class="card-price">45 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">ليمون نعناع</div></div><div class="card-price">55 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">بلح بالحليب والمكسرات</div></div><div class="card-price">70 <small>ج</small></div></div>
+    </div>
+    <div class="sub-head">ميكس جوس &nbsp; Mix Juice</div>
+    <div class="grid">
+      <div class="card"><div class="card-left"><div class="card-name">هاواي</div><div class="card-note">كيوي – مانجا</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">لاروز</div><div class="card-note">مانجا – فراولة – كيوي</div></div><div class="card-price">70 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">مانجا خوخ</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">مانجا باشون</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">فلوريدا</div><div class="card-note">مانجا – جوافة – فراولة</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">بيناكولادا</div><div class="card-note">أناناس – جوز هند</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">دبل سماش ميكس</div><div class="card-note">أفوكادو – بلح – عسل – مكسرات</div></div><div class="card-price">150 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">ميكس ايفو</div><div class="card-note">ميكس فواكه</div></div><div class="card-price">100 <small>ج</small></div></div>
+    </div>
+  </div>
+  <hr class="sep">
+
+  <!-- MIX SODA -->
+  <div id="s-mixsoda" class="cat-block">
+    <div class="cat-head">
+      <div class="cat-icon">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72"/><path d="M15.44 2.75c-4.37 6.03-6.02 9.42-8.03 17.72"/></svg>
+      </div>
+      <div class="cat-name">ميكس سودا</div>
+    </div>
+    <div class="cat-en">MIX SODA</div>
+    <div class="cat-rule"></div>
+    <div class="grid">
+      <div class="card"><div class="card-left"><div class="card-name">موهيتو كلاسيك</div><div class="card-note">نعناع – ليمون – صودا</div></div><div class="card-price">55 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">موهيتو فروت</div><div class="card-note">نعناع – لمون – صودا – فليفر اختيارك</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">بلو باشون</div><div class="card-note">نعناع – ليمون – بلو كوراساو – باشون – صودا</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">شيري كولا</div><div class="card-note">كولا – كريز – صودا</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">ريد فولت</div><div class="card-note">فراولة – كريز – روزبيري – برتقال – ليمون</div></div><div class="card-price">75 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">آيس لاند</div><div class="card-note">خوخ – صودا – بلو كوراساو – برتقال</div></div><div class="card-price">70 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">بلو هاواي</div><div class="card-note">بلو كوراساو – صودا – نعناع – ليمون</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">بور ايفو</div><div class="card-note">بلو كوراساو – صودا – نعناع – ليمون – أناناس</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">من شاين</div><div class="card-note">فليفر رمان – برتقال – سلايز – صودا</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">من رايز</div><div class="card-note">فليفر فراوله – أناناس – سلايز – صودا</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">ريدبول فروت</div><div class="card-note">باشون – خوخ – بلوبيري – ريدبول</div></div><div class="card-price">100 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">بلو أورانج</div><div class="card-note">بلوكوراساو – أورانج – سلايز – صودا</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">يور ايفو</div><div class="card-note">إسبريسو – ريد بول</div></div><div class="card-price">100 <small>ج</small></div></div>
+    </div>
+  </div>
+  <hr class="sep">
+
+  <!-- SMOOTHIE -->
+  <div id="s-smoothie" class="cat-block">
+    <div class="cat-head">
+      <div class="cat-icon">
+        <svg viewBox="0 0 24 24"><path d="M7 3h10l-1.5 9H8.5L7 3z"/><path d="M8.5 12S6 14 6 18h12c0-4-2.5-6-2.5-6"/><line x1="12" y1="18" x2="12" y2="21"/></svg>
+      </div>
+      <div class="cat-name">سموثي</div>
+    </div>
+    <div class="cat-en">SMOOTHIE</div>
+    <div class="cat-rule"></div>
+    <div class="grid">
+      <div class="card"><div class="card-left"><div class="card-name">ليمون</div></div><div class="card-price">50 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">ليمون نعناع</div></div><div class="card-price">55 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">بطيخ</div></div><div class="card-price">55 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">خوخ</div></div><div class="card-price">55 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">أناناس</div></div><div class="card-price">55 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">جوز هند</div></div><div class="card-price">55 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">برتقال</div></div><div class="card-price">55 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">فراولة</div></div><div class="card-price">55 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">جوافة</div></div><div class="card-price">55 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">باشون</div></div><div class="card-price">55 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">بلوبيري</div></div><div class="card-price">55 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">كريز</div></div><div class="card-price">55 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">ميكس بيري</div></div><div class="card-price">60 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">مانجا</div></div><div class="card-price">55 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">ميكس سموزي</div><div class="card-note">مانجا–كيوي / مانجا–فراولة / بطيخ–نعناع / بيري–راس بيري</div></div><div class="card-price">65 <small>ج</small></div></div>
+    </div>
+  </div>
+  <hr class="sep">
+
+  <!-- MILKSHAKE -->
+  <div id="s-milkshake" class="cat-block">
+    <div class="cat-head">
+      <div class="cat-icon">
+        <svg viewBox="0 0 24 24"><path d="M8 2h8v3l1 1v14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V6l1-1V2z"/><line x1="12" y1="2" x2="12" y2="5"/></svg>
+      </div>
+      <div class="cat-name">ميلك شيك</div>
+    </div>
+    <div class="cat-en">MILKSHAKE</div>
+    <div class="cat-rule"></div>
+    <div class="grid">
+      <div class="card"><div class="card-left"><div class="card-name">لوتس</div></div><div class="card-price">75 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">أوريو</div></div><div class="card-price">75 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">شوكليت</div></div><div class="card-price">75 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">فانيليا</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">كراميل</div></div><div class="card-price">70 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">نوتيلا – كيت كات – فراولة</div></div><div class="card-price">75 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">جوافة</div></div><div class="card-price">75 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">مانجا</div></div><div class="card-price">75 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">بطيخ</div></div><div class="card-price">75 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">كيوي</div></div><div class="card-price">75 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">أفوكادو بالمكسرات</div></div><div class="card-price">80 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">تشيز كيك</div></div><div class="card-price">100 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">شوكليت كيك</div></div><div class="card-price">100 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">مولتين كيك</div></div><div class="card-price">110 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">أناناس</div></div><div class="card-price">75 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">جوز هند – خوخ – كريز</div></div><div class="card-price">75 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">ميكس بيري</div></div><div class="card-price">75 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">ميكس ايفو</div></div><div class="card-price">85 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">بوبا باشون – فراولة – كوفي</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">بوبا بلوبيري</div></div><div class="card-price">65 <small>ج</small></div></div>
+    </div>
+    <div class="sub-head">آيس كريم 3 بوله &nbsp; Ice Cream</div>
+    <div class="grid">
+      <div class="card"><div class="card-left"><div class="card-name">فانيليا</div></div><div class="card-price">35 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">شوكليت</div></div><div class="card-price">35 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">فراولة</div></div><div class="card-price">35 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">مانجا</div></div><div class="card-price">35 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">لوتس</div></div><div class="card-price">40 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">أوريو</div></div><div class="card-price">40 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">بلوبيري</div></div><div class="card-price">35 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">ميكس بيري</div></div><div class="card-price">35 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">أناناس</div></div><div class="card-price">35 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">بطيخ</div></div><div class="card-price">35 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">كيوي</div></div><div class="card-price">35 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">كيت كات</div></div><div class="card-price">50 <small>ج</small></div></div>
+    </div>
+  </div>
+  <hr class="sep">
+
+  <!-- WAFFLE -->
+  <div id="s-waffle" class="cat-block">
+    <div class="cat-head">
+      <div class="cat-icon">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+      </div>
+      <div class="cat-name">وافل</div>
+    </div>
+    <div class="cat-en">WAFFLES</div>
+    <div class="cat-rule"></div>
+    <div class="grid">
+      <div class="card"><div class="card-left"><div class="card-name">وافل شوكليت</div></div><div class="card-price">55 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">وافل كراميل</div></div><div class="card-price">55 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">وافل لوتس</div></div><div class="card-price">60 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">وافل وايت شوكليت</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">وافل ميكس فروت</div><div class="card-note">إضافة عسل</div></div><div class="card-price">70 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">وافل أوريو</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">وافل ميكس شوكليت</div></div><div class="card-price">75 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">وافل نوتيلا</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">وافل ايفو</div></div><div class="card-price">80 <small>ج</small></div></div>
+    </div>
+  </div>
+  <hr class="sep">
+
+  <!-- DESSERTS -->
+  <div id="s-desserts" class="cat-block">
+    <div class="cat-head">
+      <div class="cat-icon">
+        <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      </div>
+      <div class="cat-name">حلويات وزبادي</div>
+    </div>
+    <div class="cat-en">DESSERTS & YOGURT</div>
+    <div class="cat-rule"></div>
+    <div class="grid">
+      <div class="card"><div class="card-left"><div class="card-name">مولتين</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">شوكليت كيك</div></div><div class="card-price">60 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">تشيز كيك</div><div class="card-note">صوص من اختيارك</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">سيتابون</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">براونيز</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">زبادي كلاسيك</div></div><div class="card-price">55 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">زبادي عسل</div></div><div class="card-price">60 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">زبادي فواكه</div><div class="card-note">مانجو – فراولة – راس بيري – بلوبيري – موز – أناناس – خوخ</div></div><div class="card-price">65 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">زبادي فروت</div></div><div class="card-price">75 <small>ج</small></div></div>
+    </div>
+  </div>
+  <hr class="sep">
+
+  <!-- SOFT DRINKS -->
+  <div id="s-softdrinks" class="cat-block">
+    <div class="cat-head">
+      <div class="cat-icon">
+        <svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4Z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/></svg>
+      </div>
+      <div class="cat-name">مشروبات</div>
+    </div>
+    <div class="cat-en">SOFT DRINKS</div>
+    <div class="cat-rule"></div>
+    <div class="grid">
+      <div class="card"><div class="card-left"><div class="card-name">مياه</div></div><div class="card-price">10 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">بيبسي</div></div><div class="card-price">30 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">سفن</div></div><div class="card-price">30 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">ميرندا</div></div><div class="card-price">30 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">ميرندا تفاح</div></div><div class="card-price">30 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">شويس رمان</div></div><div class="card-price">30 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">شويس جولد</div></div><div class="card-price">30 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">مونت ديو</div></div><div class="card-price">30 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">ريد بول</div></div><div class="card-price">80 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">فولت</div></div><div class="card-price">25 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">ستينج</div></div><div class="card-price">30 <small>ج</small></div></div>
+    </div>
+    <div class="sub-head">إضافات &nbsp; Extras</div>
+    <div class="grid">
+      <div class="card"><div class="card-left"><div class="card-name">فليفر</div></div><div class="card-price">10 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">صوص</div></div><div class="card-price">15 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">إسبريسو</div></div><div class="card-price">20 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">ويد كريم</div></div><div class="card-price">10 <small>ج</small></div></div>
+      <div class="card"><div class="card-left"><div class="card-name">آيس كريم</div></div><div class="card-price">10 <small>ج</small></div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════
+     FOOTER
+═══════════════════════════════════════ -->
+<div class="footer">EVO CAFÉ &nbsp;·&nbsp; القائمة الكاملة &nbsp;·&nbsp; 2025</div>
+
+<script src="menu.js"></script>
+</body>
+</html>
