@@ -2,7 +2,7 @@ const SECTIONS = [
   'hotcoffee', 'espresso', 'hotdrinks', 'hotmilk',
   'icecoffee', 'frappe', 'icematcha', 'juice',
   'mixsoda', 'smoothie', 'milkshake', 'waffle',
-  'desserts', 'softdrinks'
+  'desserts', 'softdrinks', 'yogurt'
 ];
 
 function show(cat, btn) {
