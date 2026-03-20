@@ -152,6 +152,14 @@
       </svg>
       حلويات
     </button>
+    <button class="nav-btn" onclick="show('zabady', this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+        stroke-linejoin="round">
+        <path
+          d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+      </svg>
+      زبادي
+    </button>
     <button class="nav-btn" onclick="show('softdrinks', this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
         stroke-linejoin="round">
@@ -160,7 +168,7 @@
         <line x1="6" y1="1" x2="6" y2="4" />
         <line x1="10" y1="1" x2="10" y2="4" />
       </svg>
-      مشروبات
+      مشروبات غازيه
     </button>
   </nav>
 
@@ -437,7 +445,7 @@
           </div>
           <div class="card-price">50 <small>ج</small></div>
         </div>
- 
+
         <div class="card">
           <div class="card-left">
             <div class="card-name">فرنساوي</div>
@@ -1382,9 +1390,8 @@
       </div>
     </div>
     <hr class="sep">
-
-    <!-- DESSERTS -->
-    <div id="s-desserts" class="cat-block">
+    <!-- zabady -->
+    <div id="s-zabady" class="cat-block">
       <div class="cat-head">
         <div class="cat-icon">
           <svg viewBox="0 0 24 24">
@@ -1392,42 +1399,12 @@
               d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
           </svg>
         </div>
-        <div class="cat-name">حلويات وزبادي</div>
+        <div class="cat-name"> زبادي</div>
       </div>
-      <div class="cat-en">DESSERTS & YOGURT</div>
+      <div class="cat-en">YOGURT</div>
       <div class="cat-rule"></div>
       <div class="grid">
-        <div class="card">
-          <div class="card-left">
-            <div class="card-name">مولتين</div>
-          </div>
-          <div class="card-price">65 <small>ج</small></div>
-        </div>
-        <div class="card">
-          <div class="card-left">
-            <div class="card-name">شوكليت كيك</div>
-          </div>
-          <div class="card-price">60 <small>ج</small></div>
-        </div>
-        <div class="card">
-          <div class="card-left">
-            <div class="card-name">تشيز كيك</div>
-            <div class="card-note">صوص من اختيارك</div>
-          </div>
-          <div class="card-price">65 <small>ج</small></div>
-        </div>
-        <div class="card">
-          <div class="card-left">
-            <div class="card-name">سينابون</div>
-          </div>
-          <div class="card-price">65 <small>ج</small></div>
-        </div>
-        <div class="card">
-          <div class="card-left">
-            <div class="card-name">براونيز</div>
-          </div>
-          <div class="card-price">65 <small>ج</small></div>
-        </div>
+
         <div class="card">
           <div class="card-left">
             <div class="card-name">زبادي كلاسيك</div>
@@ -1453,6 +1430,80 @@
           </div>
           <div class="card-price">75 <small>ج</small></div>
         </div>
+      </div>
+    </div>
+    <!-- DESSERTS -->
+
+    <div id="s-desserts" class="cat-block">
+      <div class="cat-head">
+        <div class="cat-icon">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+          </svg>
+        </div>
+        <div class="cat-name">حلويات </div>
+      </div>
+      <div class="cat-en">DESSERTS </div>
+      <div class="cat-rule"></div>
+      <div class="grid">
+        <div class="card">
+          <div class="card-left">
+            <div class="card-name">مولتين كلاسيك</div>
+          </div>
+          <div class="card-price">65 <small>ج</small></div>
+        </div>
+        <div class="card">
+          <div class="card-left">
+            <div class="card-name">مولتين نوتيلا</div>
+          </div>
+          <div class="card-price">75 <small>ج</small></div>
+        </div>
+        <div class="card">
+          <div class="card-left">
+            <div class="card-name">شوكليت كيك</div>
+          </div>
+          <div class="card-price">65 <small>ج</small></div>
+        </div>
+        <div class="card">
+          <div class="card-left">
+            <div class="card-name">تشيز كيك</div>
+            <div class="card-note">صوص من اختيارك</div>
+          </div>
+          <div class="card-price">65 <small>ج</small></div>
+        </div>
+        <div class="card">
+          <div class="card-left">
+            <div class="card-name">سينابون - 4 قطع</div>
+          </div>
+          <div class="card-price">65 <small>ج</small></div>
+        </div>
+        <div class="card">
+          <div class="card-left">
+            <div class="card-name">سينابون - 6 قطع</div>
+          </div>
+          <div class="card-price">75 <small>ج</small></div>
+        </div>
+        <div class="card">
+          <div class="card-left">
+            <div class="card-name">براونيز / روك</div>
+          </div>
+          <div class="card-price">75 <small>ج</small></div>
+        </div>
+        <div class="card">
+          <div class="card-left">
+            <div class="card-name">كاب كيك </div>
+          </div>
+          <div class="card-price">55 <small>ج</small></div>
+        </div>
+        <div class="card">
+          <div class="card-left">
+            <div class="card-name">أتشيز كيك </div>
+          </div>
+          <div class="card-price">65 <small>ج</small></div>
+        </div>
+
+
       </div>
     </div>
     <hr class="sep">
