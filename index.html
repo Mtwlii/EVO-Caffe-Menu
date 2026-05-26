@@ -10,190 +10,146 @@
 
 <body>
 
-  <!-- ═══════════════════════════════════════
-     HERO
-═══════════════════════════════════════ -->
   <div class="hero">
-    <div class="hero-eyebrow">Welcome to</div>
+    <div class="hero-bg"></div>
+    <div class="hero-orb"></div>
+    <div class="eyebrow">Welcome to</div>
     <div class="logo">EVO</div>
-    <div class="logo-tagline">Café & Drinks · القائمة الكاملة</div>
-    <div class="hero-rule">
-      <div class="hero-rule-line"></div>
-      <div class="hero-rule-diamond"></div>
-      <div class="hero-rule-line"></div>
+    <div class="logo-sub">Café & Drinks · القائمة الكاملة</div>
+    <div class="ornament">
+      <div class="ornament-line"></div>
+      <div class="ornament-center">✦</div>
+      <div class="ornament-line"></div>
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════════
-     NAVIGATION
-═══════════════════════════════════════ -->
-  <nav class="nav">
-    <button class="nav-btn active" onclick="show('all', this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-        stroke-linejoin="round">
-        <rect x="3" y="3" width="7" height="7" rx="1" />
-        <rect x="14" y="3" width="7" height="7" rx="1" />
-        <rect x="3" y="14" width="7" height="7" rx="1" />
-        <rect x="14" y="14" width="7" height="7" rx="1" />
-      </svg>
-      الكل
-    </button>
-    <button class="nav-btn" onclick="show('hotcoffee', this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-        stroke-linejoin="round">
-        <path d="M17 8h1a4 4 0 0 1 0 8h-1" />
-        <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
-        <line x1="6" y1="2" x2="6" y2="4" />
-        <line x1="10" y1="2" x2="10" y2="4" />
-        <line x1="14" y1="2" x2="14" y2="4" />
-      </svg>
-      قهوة ساخنة
-    </button>
-    <button class="nav-btn" onclick="show('espresso', this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-        stroke-linejoin="round">
-        <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
-        <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4Z" />
-      </svg>
-      إسبريسو
-    </button>
-    <button class="nav-btn" onclick="show('hotdrinks', this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-        stroke-linejoin="round">
-        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
-        <line x1="4" y1="22" x2="4" y2="15" />
-      </svg>
-      مشروبات ساخنة
-    </button>
-    <button class="nav-btn" onclick="show('hotmilk', this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-        stroke-linejoin="round">
-        <path d="M8 2h8l1 6H7L8 2z" />
-        <path d="M7 8c0 0-2 1.5-2 5s2 9 2 9h10s2-4.5 2-9-2-5-2-5" />
-      </svg>
-      حليب ساخن
-    </button>
-    <button class="nav-btn" onclick="show('icecoffee', this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-        stroke-linejoin="round">
-        <path d="M12 2L2 7l10 5 10-5-10-5z" />
-        <path d="M2 17l10 5 10-5" />
-        <path d="M2 12l10 5 10-5" />
-      </svg>
-      قهوة باردة
-    </button>
-    <button class="nav-btn" onclick="show('frappe', this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-        stroke-linejoin="round">
-        <path d="M12 2c0 0-8 3-8 10v2h16v-2C20 5 12 2 12 2z" />
-        <rect x="8" y="14" width="8" height="8" rx="1" />
-      </svg>
-      فرابيه
-    </button>
-    <button class="nav-btn" onclick="show('icematcha', this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-        stroke-linejoin="round">
-        <path d="M17 8C8 10 5.9 16.17 3.82 21" />
-        <path d="M9.1 8.1C11 10 12 12 12 17" />
-        <path d="M14.5 8C14.5 8 15 12 13 15" />
-      </svg>
-      ماتشا
-    </button>
-    <button class="nav-btn" onclick="show('juice', this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-        stroke-linejoin="round">
-        <path d="M9 2h6l1 4H8L9 2z" />
-        <path d="M3 6h18l-2 14H5L3 6z" />
-      </svg>
-      عصائر
-    </button>
-    <button class="nav-btn" onclick="show('mixsoda', this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-        stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10" />
-        <path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72" />
-        <path d="M15.44 2.75c-4.37 6.03-6.02 9.42-8.03 17.72" />
-      </svg>
-      ميكس صودا
-    </button>
-    <button class="nav-btn" onclick="show('smoothie', this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-        stroke-linejoin="round">
-        <path d="M7 3h10l-1.5 9H8.5L7 3z" />
-        <path d="M8.5 12S6 14 6 18h12c0-4-2.5-6-2.5-6" />
-        <line x1="12" y1="18" x2="12" y2="21" />
-      </svg>
-      سموزي
-    </button>
-    <button class="nav-btn" onclick="show('milkshake', this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-        stroke-linejoin="round">
-        <path d="M8 2h8v3l1 1v14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V6l1-1V2z" />
-        <line x1="12" y1="2" x2="12" y2="5" />
-      </svg>
-      ميلك شيك
-    </button>
-    <button class="nav-btn" onclick="show('waffle', this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-        stroke-linejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2" />
-        <line x1="3" y1="9" x2="21" y2="9" />
-        <line x1="3" y1="15" x2="21" y2="15" />
-        <line x1="9" y1="3" x2="9" y2="21" />
-        <line x1="15" y1="3" x2="15" y2="21" />
-      </svg>
-      وافل
-    </button>
-    <button class="nav-btn" onclick="show('desserts', this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-        stroke-linejoin="round">
-        <path d="M8 2h8v3l1 1v14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V6l1-1V2z" />
-        <line x1="12" y1="2" x2="12" y2="5" />
-      </svg>
-      حلويات
-    </button>
+  <div class="nav-outer">
+    <nav class="nav">
+      <button class="nb active" onclick="show('all',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="3" width="7" height="7" rx="1" />
+          <rect x="14" y="3" width="7" height="7" rx="1" />
+          <rect x="3" y="14" width="7" height="7" rx="1" />
+          <rect x="14" y="14" width="7" height="7" rx="1" />
+        </svg>الكل
+      </button>
+      <button class="nb" onclick="show('hotcoffee',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M17 8h1a4 4 0 0 1 0 8h-1" />
+          <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
+          <line x1="6" y1="2" x2="6" y2="4" />
+          <line x1="10" y1="2" x2="10" y2="4" />
+          <line x1="14" y1="2" x2="14" y2="4" />
+        </svg>قهوة ساخنة
+      </button>
+      <button class="nb" onclick="show('espresso',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
+          <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4Z" />
+        </svg>إسبريسو
+      </button>
+      <button class="nb" onclick="show('hotdrinks',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+          <line x1="4" y1="22" x2="4" y2="15" />
+        </svg>مشروبات ساخنة
+      </button>
+      <button class="nb" onclick="show('hotmilk',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M8 2h8l1 6H7L8 2z" />
+          <path d="M7 8c0 0-2 1.5-2 5s2 9 2 9h10s2-4.5 2-9-2-5-2-5" />
+        </svg>حليب ساخن
+      </button>
+      <button class="nb" onclick="show('icecoffee',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M12 2L2 7l10 5 10-5-10-5z" />
+          <path d="M2 17l10 5 10-5" />
+          <path d="M2 12l10 5 10-5" />
+        </svg>قهوة باردة
+      </button>
+      <button class="nb" onclick="show('frappe',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M12 2c0 0-8 3-8 10v2h16v-2C20 5 12 2 12 2z" />
+          <rect x="8" y="14" width="8" height="8" rx="1" />
+        </svg>فرابيه
+      </button>
+      <button class="nb" onclick="show('icematcha',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M17 8C8 10 5.9 16.17 3.82 21" />
+          <path d="M9.1 8.1C11 10 12 12 12 17" />
+          <path d="M14.5 8C14.5 8 15 12 13 15" />
+        </svg>ماتشا
+      </button>
+      <button class="nb" onclick="show('juice',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M9 2h6l1 4H8L9 2z" />
+          <path d="M3 6h18l-2 14H5L3 6z" />
+        </svg>عصائر
+      </button>
+      <button class="nb" onclick="show('mixsoda',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72" />
+          <path d="M15.44 2.75c-4.37 6.03-6.02 9.42-8.03 17.72" />
+        </svg>ميكس صودا
+      </button>
+      <button class="nb" onclick="show('smoothie',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M7 3h10l-1.5 9H8.5L7 3z" />
+          <path d="M8.5 12S6 14 6 18h12c0-4-2.5-6-2.5-6" />
+          <line x1="12" y1="18" x2="12" y2="21" />
+        </svg>سموزي
+      </button>
+      <button class="nb" onclick="show('milkshake',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M8 2h8v3l1 1v14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V6l1-1V2z" />
+          <line x1="12" y1="2" x2="12" y2="5" />
+        </svg>ميلك شيك
+      </button>
+      <button class="nb" onclick="show('waffle',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <line x1="3" y1="9" x2="21" y2="9" />
+          <line x1="3" y1="15" x2="21" y2="15" />
+          <line x1="9" y1="3" x2="9" y2="21" />
+          <line x1="15" y1="3" x2="15" y2="21" />
+        </svg>وافل
+      </button>
+      <button class="nb" onclick="show('desserts',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path
+            d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+        </svg>حلويات
+      </button>
+      <button class="nb" onclick="show('softdrinks',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
+          <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4Z" />
+          <line x1="6" y1="1" x2="6" y2="4" />
+          <line x1="10" y1="1" x2="10" y2="4" />
+        </svg>مشروبات غازية
+      </button>
+      <button class="nb" onclick="show('yogurt',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path
+            d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+        </svg>زبادي
+      </button>
+    </nav>
+  </div>
 
-    <button class="nav-btn" onclick="show('softdrinks', this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-        stroke-linejoin="round">
-        <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
-        <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4Z" />
-        <line x1="6" y1="1" x2="6" y2="4" />
-        <line x1="10" y1="1" x2="10" y2="4" />
-      </svg>
-      مشروبات غازيه
-    </button>
-    <button class="nav-btn" onclick="show('yogurt', this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-        stroke-linejoin="round">
-        <path
-          d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-      </svg>
-      زبادي
-    </button>
-  </nav>
-
-  <!-- ═══════════════════════════════════════
-     CONTENT
-═══════════════════════════════════════ -->
   <div class="page">
 
-    <!-- HOT COFFEE -->
+    <!-- 01 HOT COFFEE -->
     <div id="s-hotcoffee" class="cat-block">
-      <div class="cat-head">
-        <div class="cat-icon">
-          <svg viewBox="0 0 24 24">
-            <path d="M17 8h1a4 4 0 0 1 0 8h-1" />
-            <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
-            <line x1="6" y1="2" x2="6" y2="4" />
-            <line x1="10" y1="2" x2="10" y2="4" />
-            <line x1="14" y1="2" x2="14" y2="4" />
-          </svg>
+      <div class="cat-top">
+        <div class="cat-num">01</div>
+        <div class="cat-info">
+          <div class="cat-en">HOT COFFEE</div>
+          <div class="cat-ar">قهوة ساخنة</div>
         </div>
-        <div class="cat-name">قهوة ساخنة</div>
       </div>
-      <div class="cat-en">HOT COFFEE</div>
-      <div class="cat-rule"></div>
+      <div class="cat-line"></div>
       <div class="grid">
         <div class="card">
           <div class="card-left">
@@ -235,19 +191,16 @@
     </div>
     <hr class="sep">
 
-    <!-- ESPRESSO -->
+    <!-- 02 ESPRESSO -->
     <div id="s-espresso" class="cat-block">
-      <div class="cat-head">
-        <div class="cat-icon">
-          <svg viewBox="0 0 24 24">
-            <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
-            <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4Z" />
-          </svg>
+      <div class="cat-top">
+        <div class="cat-num">02</div>
+        <div class="cat-info">
+          <div class="cat-en">ESPRESSO COFFEE</div>
+          <div class="cat-ar">إسبريسو</div>
         </div>
-        <div class="cat-name">إسبريسو</div>
       </div>
-      <div class="cat-en">ESPRESSO COFFEE</div>
-      <div class="cat-rule"></div>
+      <div class="cat-line"></div>
       <div class="grid">
         <div class="card">
           <div class="card-left">
@@ -281,7 +234,7 @@
           <div class="card-price">55 <small>ج</small></div>
         </div>
       </div>
-      <div class="sub-head">إسبريسو وحليب &nbsp; Espresso & Milk</div>
+      <div class="sub-head">إسبريسو وحليب <span>ESPRESSO & MILK</span></div>
       <div class="grid">
         <div class="card">
           <div class="card-left">
@@ -315,7 +268,7 @@
         </div>
         <div class="card">
           <div class="card-left">
-            <div class="card-name">استروبلي لاتيه</div>
+            <div class="card-name">استروبيري لاتيه</div>
           </div>
           <div class="card-price">70 <small>ج</small></div>
         </div>
@@ -347,19 +300,16 @@
     </div>
     <hr class="sep">
 
-    <!-- HOT DRINKS -->
+    <!-- 03 HOT DRINKS -->
     <div id="s-hotdrinks" class="cat-block">
-      <div class="cat-head">
-        <div class="cat-icon">
-          <svg viewBox="0 0 24 24">
-            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
-            <line x1="4" y1="22" x2="4" y2="15" />
-          </svg>
+      <div class="cat-top">
+        <div class="cat-num">03</div>
+        <div class="cat-info">
+          <div class="cat-en">HOT DRINKS</div>
+          <div class="cat-ar">مشروبات ساخنة</div>
         </div>
-        <div class="cat-name">مشروبات ساخنة</div>
       </div>
-      <div class="cat-en">HOT DRINKS</div>
-      <div class="cat-rule"></div>
+      <div class="cat-line"></div>
       <div class="grid">
         <div class="card">
           <div class="card-left">
@@ -399,8 +349,8 @@
         </div>
         <div class="card">
           <div class="card-left">
-            <div class="card-name">ميكس أعشاب </div>
-            <div class="card-note">قرفه – نعناع - زنجبيل – عسل</div>
+            <div class="card-name">ميكس أعشاب</div>
+            <div class="card-note">قرفه – نعناع – زنجبيل – عسل</div>
           </div>
           <div class="card-price">30 <small>ج</small></div>
         </div>
@@ -412,7 +362,7 @@
         </div>
         <div class="card">
           <div class="card-left">
-            <div class="card-name">هوت أورانج سيدر 4</div>
+            <div class="card-name">هوت أورانج سيدر</div>
           </div>
           <div class="card-price">45 <small>ج</small></div>
         </div>
@@ -420,19 +370,16 @@
     </div>
     <hr class="sep">
 
-    <!-- HOT MILK -->
+    <!-- 04 HOT MILK -->
     <div id="s-hotmilk" class="cat-block">
-      <div class="cat-head">
-        <div class="cat-icon">
-          <svg viewBox="0 0 24 24">
-            <path d="M8 2h8l1 6H7L8 2z" />
-            <path d="M7 8c0 0-2 1.5-2 5s2 9 2 9h10s2-4.5 2-9-2-5-2-5" />
-          </svg>
+      <div class="cat-top">
+        <div class="cat-num">04</div>
+        <div class="cat-info">
+          <div class="cat-en">HOT MILK</div>
+          <div class="cat-ar">حليب ساخن</div>
         </div>
-        <div class="cat-name">حليب ساخن</div>
       </div>
-      <div class="cat-en">HOT MILK</div>
-      <div class="cat-rule"></div>
+      <div class="cat-line"></div>
       <div class="grid">
         <div class="card">
           <div class="card-left">
@@ -440,30 +387,11 @@
           </div>
           <div class="card-price">55 <small>ج</small></div>
         </div>
-
         <div class="card">
           <div class="card-left">
             <div class="card-name">فرنساوي</div>
           </div>
           <div class="card-price">50 <small>ج</small></div>
-        </div>
-        <div class="card">
-          <div class="card-left">
-            <div class="card-name">نسكافيه كلاسيك </div>
-          </div>
-          <div class="card-price">30 <small>ج</small></div>
-        </div>
-        <div class="card">
-          <div class="card-left">
-            <div class="card-name">نسكافيه بالحليب</div>
-          </div>
-          <div class="card-price">55 <small>ج</small></div>
-        </div>
-        <div class="card">
-          <div class="card-left">
-            <div class="card-name">قرفة </div>
-          </div>
-          <div class="card-price">25 <small>ج</small></div>
         </div>
         <div class="card">
           <div class="card-left">
@@ -529,20 +457,16 @@
     </div>
     <hr class="sep">
 
-    <!-- ICE COFFEE -->
+    <!-- 05 ICE COFFEE -->
     <div id="s-icecoffee" class="cat-block">
-      <div class="cat-head">
-        <div class="cat-icon">
-          <svg viewBox="0 0 24 24">
-            <path d="M12 2L2 7l10 5 10-5-10-5z" />
-            <path d="M2 17l10 5 10-5" />
-            <path d="M2 12l10 5 10-5" />
-          </svg>
+      <div class="cat-top">
+        <div class="cat-num">05</div>
+        <div class="cat-info">
+          <div class="cat-en">ICE COFFEE</div>
+          <div class="cat-ar">قهوة باردة</div>
         </div>
-        <div class="cat-name">قهوة باردة</div>
       </div>
-      <div class="cat-en">ICE COFFEE</div>
-      <div class="cat-rule"></div>
+      <div class="cat-line"></div>
       <div class="grid">
         <div class="card">
           <div class="card-left">
@@ -576,13 +500,13 @@
         </div>
         <div class="card">
           <div class="card-left">
-            <div class="card-name">آيس tea</div>
+            <div class="card-name">آيس Tea</div>
           </div>
           <div class="card-price">45 <small>ج</small></div>
         </div>
         <div class="card">
           <div class="card-left">
-            <div class="card-name">آيس tea <span>فليفر من أختيارك </span></div>
+            <div class="card-name">آيس Tea بفليفر اختيارك</div>
           </div>
           <div class="card-price">55 <small>ج</small></div>
         </div>
@@ -608,19 +532,16 @@
     </div>
     <hr class="sep">
 
-    <!-- FRAPPE -->
+    <!-- 06 FRAPPE -->
     <div id="s-frappe" class="cat-block">
-      <div class="cat-head">
-        <div class="cat-icon">
-          <svg viewBox="0 0 24 24">
-            <path d="M12 2c0 0-8 3-8 10v2h16v-2C20 5 12 2 12 2z" />
-            <rect x="8" y="14" width="8" height="8" rx="1" />
-          </svg>
+      <div class="cat-top">
+        <div class="cat-num">06</div>
+        <div class="cat-info">
+          <div class="cat-en">FRAPPÉ COFFEE</div>
+          <div class="cat-ar">فرابيه كوفي</div>
         </div>
-        <div class="cat-name">فرابيه كوفي</div>
       </div>
-      <div class="cat-en">FRAPPÉ COFFEE</div>
-      <div class="cat-rule"></div>
+      <div class="cat-line"></div>
       <div class="grid">
         <div class="card">
           <div class="card-left">
@@ -656,20 +577,16 @@
     </div>
     <hr class="sep">
 
-    <!-- ICE MATCHA -->
+    <!-- 07 ICE MATCHA -->
     <div id="s-icematcha" class="cat-block">
-      <div class="cat-head">
-        <div class="cat-icon">
-          <svg viewBox="0 0 24 24">
-            <path d="M17 8C8 10 5.9 16.17 3.82 21" />
-            <path d="M9.1 8.1C11 10 12 12 12 17" />
-            <path d="M14.5 8C14.5 8 15 12 13 15" />
-          </svg>
+      <div class="cat-top">
+        <div class="cat-num">07</div>
+        <div class="cat-info">
+          <div class="cat-en">ICE MATCHA</div>
+          <div class="cat-ar">آيس ماتشا</div>
         </div>
-        <div class="cat-name">آيس ماتشا</div>
       </div>
-      <div class="cat-en">ICE MATCHA</div>
-      <div class="cat-rule"></div>
+      <div class="cat-line"></div>
       <div class="grid">
         <div class="card">
           <div class="card-left">
@@ -685,7 +602,7 @@
         </div>
         <div class="card">
           <div class="card-left">
-            <div class="card-name">ماتشا حليب مكسف</div>
+            <div class="card-name">ماتشا حليب مكثف</div>
           </div>
           <div class="card-price">70 <small>ج</small></div>
         </div>
@@ -712,19 +629,16 @@
     </div>
     <hr class="sep">
 
-    <!-- JUICE -->
+    <!-- 08 JUICE -->
     <div id="s-juice" class="cat-block">
-      <div class="cat-head">
-        <div class="cat-icon">
-          <svg viewBox="0 0 24 24">
-            <path d="M9 2h6l1 4H8L9 2z" />
-            <path d="M3 6h18l-2 14H5L3 6z" />
-          </svg>
+      <div class="cat-top">
+        <div class="cat-num">08</div>
+        <div class="cat-info">
+          <div class="cat-en">FRESH JUICE</div>
+          <div class="cat-ar">عصير طازج</div>
         </div>
-        <div class="cat-name">عصير طازج</div>
       </div>
-      <div class="cat-en">FRESH JUICE</div>
-      <div class="cat-rule"></div>
+      <div class="cat-line"></div>
       <div class="grid">
         <div class="card">
           <div class="card-left">
@@ -776,7 +690,7 @@
         </div>
         <div class="card">
           <div class="card-left">
-            <div class="card-name">أفوكادو بلح و مكسرات</div>
+            <div class="card-name">أفوكادو بلح ومكسرات</div>
           </div>
           <div class="card-price">150 <small>ج</small></div>
         </div>
@@ -817,7 +731,7 @@
           <div class="card-price">75 <small>ج</small></div>
         </div>
       </div>
-      <div class="sub-head">ميكس جوس &nbsp; Mix Juice</div>
+      <div class="sub-head">ميكس جوس <span>MIX JUICE</span></div>
       <div class="grid">
         <div class="card">
           <div class="card-left">
@@ -870,20 +784,16 @@
     </div>
     <hr class="sep">
 
-    <!-- MIX SODA -->
+    <!-- 09 MIX SODA -->
     <div id="s-mixsoda" class="cat-block">
-      <div class="cat-head">
-        <div class="cat-icon">
-          <svg viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="10" />
-            <path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72" />
-            <path d="M15.44 2.75c-4.37 6.03-6.02 9.42-8.03 17.72" />
-          </svg>
+      <div class="cat-top">
+        <div class="cat-num">09</div>
+        <div class="cat-info">
+          <div class="cat-en">MIX SODA</div>
+          <div class="cat-ar">ميكس صودا</div>
         </div>
-        <div class="cat-name">ميكس صودا</div>
       </div>
-      <div class="cat-en">MIX SODA</div>
-      <div class="cat-rule"></div>
+      <div class="cat-line"></div>
       <div class="grid">
         <div class="card">
           <div class="card-left">
@@ -895,7 +805,7 @@
         <div class="card">
           <div class="card-left">
             <div class="card-name">موهيتو فروت</div>
-            <div class="card-note">نعناع – لمون – صودا – فليفر اختيارك</div>
+            <div class="card-note">نعناع – ليمون – صودا – فليفر اختيارك</div>
           </div>
           <div class="card-price">70 <small>ج</small></div>
         </div>
@@ -944,7 +854,7 @@
         <div class="card">
           <div class="card-left">
             <div class="card-name">صن رايز</div>
-            <div class="card-note">فليفر فراوله – أناناس – سلايز – صودا</div>
+            <div class="card-note">فليفر فراولة – أناناس – سلايز – صودا</div>
           </div>
           <div class="card-price">65 <small>ج</small></div>
         </div>
@@ -973,20 +883,16 @@
     </div>
     <hr class="sep">
 
-    <!-- SMOOTHIE -->
+    <!-- 10 SMOOTHIE -->
     <div id="s-smoothie" class="cat-block">
-      <div class="cat-head">
-        <div class="cat-icon">
-          <svg viewBox="0 0 24 24">
-            <path d="M7 3h10l-1.5 9H8.5L7 3z" />
-            <path d="M8.5 12S6 14 6 18h12c0-4-2.5-6-2.5-6" />
-            <line x1="12" y1="18" x2="12" y2="21" />
-          </svg>
+      <div class="cat-top">
+        <div class="cat-num">10</div>
+        <div class="cat-info">
+          <div class="cat-en">SMOOTHIE</div>
+          <div class="cat-ar">سموزي</div>
         </div>
-        <div class="cat-name">سموزي</div>
       </div>
-      <div class="cat-en">SMOOTHIE</div>
-      <div class="cat-rule"></div>
+      <div class="cat-line"></div>
       <div class="grid">
         <div class="card">
           <div class="card-left">
@@ -1077,19 +983,16 @@
     </div>
     <hr class="sep">
 
-    <!-- MILKSHAKE -->
+    <!-- 11 MILKSHAKE -->
     <div id="s-milkshake" class="cat-block">
-      <div class="cat-head">
-        <div class="cat-icon">
-          <svg viewBox="0 0 24 24">
-            <path d="M8 2h8v3l1 1v14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V6l1-1V2z" />
-            <line x1="12" y1="2" x2="12" y2="5" />
-          </svg>
+      <div class="cat-top">
+        <div class="cat-num">11</div>
+        <div class="cat-info">
+          <div class="cat-en">MILKSHAKE</div>
+          <div class="cat-ar">ميلك شيك</div>
         </div>
-        <div class="cat-name">ميلك شيك</div>
       </div>
-      <div class="cat-en">MILKSHAKE</div>
-      <div class="cat-rule"></div>
+      <div class="cat-line"></div>
       <div class="grid">
         <div class="card">
           <div class="card-left">
@@ -1206,13 +1109,12 @@
           <div class="card-price">65 <small>ج</small></div>
         </div>
       </div>
-      <div class="sub-head">آيس كريم 3 بوله &nbsp; Ice Cream</div>
+      <div class="sub-head">آيس كريم 3 بوله <span>ICE CREAM</span></div>
       <div class="grid">
         <div class="card">
           <div class="card-left">
             <div class="card-name">فانيليا</div>
-            <div class="card-note"> يمكنك اضافة اي فليفر من اختيارك + 15ج </div>
-
+            <div class="card-note">يمكنك إضافة أي فليفر من اختيارك +15ج</div>
           </div>
           <div class="card-price">40 <small>ج</small></div>
         </div>
@@ -1234,74 +1136,20 @@
           </div>
           <div class="card-price">45 <small>ج</small></div>
         </div>
-        <!-- <div class="card">
-          <div class="card-left">
-            <div class="card-name">لوتس</div>
-          </div>
-          <div class="card-price">40 <small>ج</small></div>
-        </div>
-        <div class="card">
-          <div class="card-left">
-            <div class="card-name">أوريو</div>
-          </div>
-          <div class="card-price">40 <small>ج</small></div>
-        </div>
-        <div class="card">
-          <div class="card-left">
-            <div class="card-name">بلوبيري</div>
-          </div>
-          <div class="card-price">35 <small>ج</small></div>
-        </div>
-        <div class="card">
-          <div class="card-left">
-            <div class="card-name">ميكس بيري</div>
-          </div>
-          <div class="card-price">35 <small>ج</small></div>
-        </div>
-        <div class="card">
-          <div class="card-left">
-            <div class="card-name">أناناس</div>
-          </div>
-          <div class="card-price">35 <small>ج</small></div>
-        </div>
-        <div class="card">
-          <div class="card-left">
-            <div class="card-name">بطيخ</div>
-          </div>
-          <div class="card-price">35 <small>ج</small></div>
-        </div>
-        <div class="card">
-          <div class="card-left">
-            <div class="card-name">كيوي</div>
-          </div>
-          <div class="card-price">35 <small>ج</small></div>
-        </div>
-        <div class="card">
-          <div class="card-left">
-            <div class="card-name">كيت كات</div>
-          </div>
-          <div class="card-price">50 <small>ج</small></div>
-        </div> -->
       </div>
     </div>
     <hr class="sep">
 
-    <!-- WAFFLE -->
+    <!-- 12 WAFFLE -->
     <div id="s-waffle" class="cat-block">
-      <div class="cat-head">
-        <div class="cat-icon">
-          <svg viewBox="0 0 24 24">
-            <rect x="3" y="3" width="18" height="18" rx="2" />
-            <line x1="3" y1="9" x2="21" y2="9" />
-            <line x1="3" y1="15" x2="21" y2="15" />
-            <line x1="9" y1="3" x2="9" y2="21" />
-            <line x1="15" y1="3" x2="15" y2="21" />
-          </svg>
+      <div class="cat-top">
+        <div class="cat-num">12</div>
+        <div class="cat-info">
+          <div class="cat-en">WAFFLES</div>
+          <div class="cat-ar">وافل</div>
         </div>
-        <div class="cat-name">وافل</div>
       </div>
-      <div class="cat-en">WAFFLES</div>
-      <div class="cat-rule"></div>
+      <div class="cat-line"></div>
       <div class="grid">
         <div class="card">
           <div class="card-left">
@@ -1352,27 +1200,21 @@
           </div>
           <div class="card-price">65 <small>ج</small></div>
         </div>
-
       </div>
     </div>
     <hr class="sep">
 
-    <!-- DESSERTS -->
-
+    <!-- 13 DESSERTS -->
     <div id="s-desserts" class="cat-block">
-      <div class="cat-head">
-        <div class="cat-icon">
-          <svg viewBox="0 0 24 24">
-            <path
-              d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-          </svg>
+      <div class="cat-top">
+        <div class="cat-num">13</div>
+        <div class="cat-info">
+          <div class="cat-en">DESSERTS</div>
+          <div class="cat-ar">حلويات</div>
         </div>
-        <div class="cat-name">حلويات </div>
       </div>
-      <div class="cat-en">DESSERTS </div>
-      <div class="cat-rule"></div>
+      <div class="cat-line"></div>
       <div class="grid">
-
         <div class="card">
           <div class="card-left">
             <div class="card-name">مولتين نوتيلا</div>
@@ -1400,7 +1242,7 @@
         </div>
         <div class="card">
           <div class="card-left">
-            <div class="card-name"> بلاك بيس</div>
+            <div class="card-name">بلاك بيس</div>
           </div>
           <div class="card-price">75 <small>ج</small></div>
         </div>
@@ -1412,31 +1254,24 @@
         </div>
         <div class="card">
           <div class="card-left">
-            <div class="card-name">أتشيز كيك </div>
+            <div class="card-name">أتشيز كيك</div>
           </div>
           <div class="card-price">65 <small>ج</small></div>
         </div>
-
-
       </div>
     </div>
     <hr class="sep">
 
-    <!-- SOFT DRINKS -->
+    <!-- 14 SOFT DRINKS -->
     <div id="s-softdrinks" class="cat-block">
-      <div class="cat-head">
-        <div class="cat-icon">
-          <svg viewBox="0 0 24 24">
-            <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
-            <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4Z" />
-            <line x1="6" y1="1" x2="6" y2="4" />
-            <line x1="10" y1="1" x2="10" y2="4" />
-          </svg>
+      <div class="cat-top">
+        <div class="cat-num">14</div>
+        <div class="cat-info">
+          <div class="cat-en">SOFT DRINKS</div>
+          <div class="cat-ar">مشروبات غازية</div>
         </div>
-        <div class="cat-name"> مشروبات غازيه</div>
       </div>
-      <div class="cat-en">SOFT DRINKS</div>
-      <div class="cat-rule"></div>
+      <div class="cat-line"></div>
       <div class="grid">
         <div class="card">
           <div class="card-left">
@@ -1523,7 +1358,7 @@
           <div class="card-price">35 <small>ج</small></div>
         </div>
       </div>
-      <div class="sub-head">إضافات &nbsp; Extras</div>
+      <div class="sub-head">إضافات <span>EXTRAS</span></div>
       <div class="grid">
         <div class="card">
           <div class="card-left">
@@ -1537,7 +1372,6 @@
           </div>
           <div class="card-price">15 <small>ج</small></div>
         </div>
-
         <div class="card">
           <div class="card-left">
             <div class="card-name">ويبد كريم</div>
@@ -1546,7 +1380,7 @@
         </div>
         <div class="card">
           <div class="card-left">
-            <div class="card-name">إسبرسو</div>
+            <div class="card-name">إسبريسو</div>
           </div>
           <div class="card-price">20 <small>ج</small></div>
         </div>
@@ -1562,25 +1396,21 @@
           </div>
           <div class="card-price">30 <small>ج</small></div>
         </div>
-
       </div>
     </div>
     <hr class="sep">
-    <!-- yogurt -->
-    <div id="s-yogurt" class="cat-block">
-      <div class="cat-head">
-        <div class="cat-icon">
-          <svg viewBox="0 0 24 24">
-            <path
-              d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-          </svg>
-        </div>
-        <div class="cat-name"> زبادي</div>
-      </div>
-      <div class="cat-en">YOGURT</div>
-      <div class="cat-rule"></div>
-      <div class="grid">
 
+    <!-- 15 YOGURT -->
+    <div id="s-yogurt" class="cat-block">
+      <div class="cat-top">
+        <div class="cat-num">15</div>
+        <div class="cat-info">
+          <div class="cat-en">YOGURT</div>
+          <div class="cat-ar">زبادي</div>
+        </div>
+      </div>
+      <div class="cat-line"></div>
+      <div class="grid">
         <div class="card">
           <div class="card-left">
             <div class="card-name">زبادي كلاسيك</div>
@@ -1611,13 +1441,13 @@
 
   </div>
 
-  <!-- ═══════════════════════════════════════
-     FOOTER
-═══════════════════════════════════════ -->
   <div class="footer">
-    <div>EVO CAFE &nbsp;·&nbsp; القائمة الكاملة &nbsp;·&nbsp; 2026</div>
-    جميع الحقوق محفوظة.<h4 class="author">&copy; Eng Metwally Mohamed</h4>
-    <script src="menu.js"></script>
+    <div class="footer-logo">EVO</div>
+    <div>CAFÉ & DRINKS · القائمة الكاملة · 2026</div>
+    <div class="footer-author">جميع الحقوق محفوظة · © Eng. Metwally Mohamed</div>
+  </div>
+
+  <script src="menu.js"></script>
 </body>
 
 </html>
