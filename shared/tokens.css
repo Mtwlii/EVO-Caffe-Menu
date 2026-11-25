@@ -1,0 +1,15 @@
+/* Design tokens. Change colors here only. */
+:root {
+  --bg: #17100b;          /* espresso */
+  --surface: #221810;     /* cards */
+  --surface-2: #2c2016;
+  --line: rgba(246, 236, 220, 0.12);
+  --line-strong: rgba(245, 200, 0, 0.35);
+  --text: #f7eddc;        /* cream */
+  --text-soft: #cdbfa8;
+  --brand: #f5c800;       /* EVO logo yellow */
+  --brand-deep: #d9a900;
+  --accent: #d9774a;      /* copper, for group labels */
+  --radius: 14px;
+  --font: 'Cairo', system-ui, sans-serif;
+}

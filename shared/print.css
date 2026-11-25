@@ -1,0 +1,13 @@
+@media print {
+  :root { --bg:#fff; --surface:#fff; --surface-2:#fff; --text:#1c1410; --text-soft:#5a4d42; --brand:#1c1410; --accent:#8a4a2b; --line:#d9cfc2; --line-strong:#8a7a68; }
+  body { font-size: 12pt; }
+  .hero, .nav-wrap, .scroll-hint, .print-btn, .featured, #all, .footer-logo { display: none !important; }
+  .section { display: block !important; padding: 0 0 8mm; break-inside: avoid; }
+  .sec-num { background: none; color: var(--text); border: 1px solid var(--text); }
+  .section > .items-list, .extra-pill, .highlight-item { border-color: var(--line); background: none; }
+  .item { padding: 6px 0; }
+  .menu-body { max-width: none; columns: 2; column-gap: 10mm; }
+  .footer { border: none; }
+  .qr { width: 28mm; height: 28mm; padding: 0; }
+  .footer::before { content: "EVO Café — Menu"; display: block; font-weight: 900; font-size: 16pt; margin-bottom: 4mm; }
+}
