@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#17100b">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<title>حالة طلبك — EVO Café</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Cairo', sans-serif; background: #17100b; color: #f7eddc; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
+  h1 { color: #f5c800; font-size: 22px; margin-bottom: 8px; }
+  .sub { color: #cdbfa8; font-size: 14px; margin-bottom: 32px; }
+  .steps { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 0; }
+  .step { display: flex; align-items: center; gap: 14px; padding: 14px 4px; opacity: .35; }
+  .step.on { opacity: 1; }
+  .dot { width: 34px; height: 34px; border-radius: 50%; border: 2px solid #f5c800; display: grid; place-items: center; font-size: 16px; flex-shrink: 0; }
+  .step.on .dot { background: #f5c800; color: #17100b; }
+  .step .t { font-size: 16px; font-weight: 700; }
+  .msg { margin-top: 28px; color: #cdbfa8; font-size: 13px; }
+  .err { color: #ff8a80; }
+  a.back { margin-top: 36px; color: #f5c800; font-size: 14px; }
+</style>
+</head>
+<body>
+<h1>حالة طلبك</h1>
+<div class="sub" id="sub">بنحدّث الحالة تلقائي كل شوية</div>
+<div class="steps" id="steps"></div>
+<div class="msg" id="msg"></div>
+<a class="back" href="/">رجوع للمنيو</a>
+<script src="features/data/data.config.js"></script>
+<script>
+(function () {
+  var STEPS = [
+    ['new', 'وصلنا طلبك', '📥'],
+    ['accepted', 'الطلب اتقبل', '✔️'],
+    ['preparing', 'بيتحضّر دلوقتي', '👨‍🍳'],
+    ['ready', 'جاهز، استلم', '✅']
+  ];
+  var q = new URLSearchParams(location.search);
+  var id = q.get('id') || '', key = q.get('key') || '';
+  var cfg = window.EVO_DATA || {};
+  var stepsEl = document.getElementById('steps'), msgEl = document.getElementById('msg');
+
+  function render(status) {
+    var idx = STEPS.findIndex(function (s) { return s[0] === status; });
+    stepsEl.innerHTML = '';
+    STEPS.forEach(function (s, i) {
+      var d = document.createElement('div');
+      d.className = 'step' + (i <= idx ? ' on' : '');
+      d.innerHTML = '<div class="dot">' + s[2] + '</div><div class="t">' + s[1] + '</div>';
+      stepsEl.appendChild(d);
+    });
+    msgEl.textContent = status === 'ready' ? 'بالهناء والشفاء ☕' : '';
+    if (status === 'ready') clearInterval(timer);
+  }
+  function fail(t) { stepsEl.innerHTML = ''; msgEl.innerHTML = '<span class="err">' + t + '</span>'; clearInterval(timer); }
+  function check() {
+    if (!id || !key || !cfg.url || !cfg.anonKey) return fail('رابط المتابعة ده مش صالح.');
+    fetch(cfg.url.replace(/\/$/, '') + '/rest/v1/rpc/get_order_status', {
+      method: 'POST',
+      headers: { apikey: cfg.anonKey, authorization: 'Bearer ' + cfg.anonKey, 'content-type': 'application/json' },
+      body: JSON.stringify({ p_id: id, p_edit_key: key })
+    }).then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (s) { if (typeof s === 'string') render(s); })
+      .catch(function () { /* keep last state, try next tick */ });
+  }
+  var timer = setInterval(check, 15000);
+  check();
+})();
+</script>
+</body>
+</html>

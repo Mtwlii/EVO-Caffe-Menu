@@ -27,7 +27,7 @@
   // ---------- controls on every menu item ----------
   function decorate() {
     document.querySelectorAll('.item, .extra-pill, .f-card').forEach(function (it) {
-      if (it.querySelector('.qty')) return;
+      if (it.querySelector('.qty') || it.classList.contains('oos')) return;
       var nameEl = it.querySelector('.item-name'), priceEl = it.querySelector('.item-price');
       var name = (nameEl ? nameEl.firstChild.textContent : it.firstElementChild.textContent).trim();
       if (!priceEl) return;
@@ -164,25 +164,37 @@
       if (!ok()) { err.hidden = false; num.focus(); return; }
       if (!(window.EVO_CONTACT || {}).autoOrder) { window.open(window.__evoOrderUrl(), '_blank', 'noopener'); openDone(false); return; }
       send.disabled = true; send.textContent = 'جاري الإرسال...';
-      var payload = { type: info.type, num: info.num.trim(), who: info.who.trim(), note: info.note.trim(),
+      // Order tracking (milestone 2): id + per-order key let the customer follow status.
+      var oid = null, okey = null;
+      try {
+        oid = crypto.randomUUID();
+        var rb = new Uint8Array(8); crypto.getRandomValues(rb);
+        okey = Array.prototype.map.call(rb, function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
+      } catch (e) { oid = null; okey = null; }
+      var payload = { type: info.type, num: info.num.trim(), who: info.who.trim(), note: info.note.trim(), id: oid, key: okey,
         items: Object.keys(cart).map(function (k) { return { name: cart[k].name, price: cart[k].price, qty: cart[k].qty, note: cart[k].note }; }) };
       var ctl = new AbortController(), to = setTimeout(function () { ctl.abort(); }, 10000);
       fetch('/api/order', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload), signal: ctl.signal })
-        .then(function (r) { return r.json().then(function (j) { return r.ok && j.ok; }); })
-        .catch(function () { return false; })
-        .then(function (okSent) { clearTimeout(to); openDone(okSent ? 'auto' : 'failed'); });
+        .then(function (r) { return r.json().then(function (j) { return { ok: r.ok && j.ok, tracked: !!j.tracked }; }); })
+        .catch(function () { return { ok: false, tracked: false }; })
+        .then(function (res2) {
+          clearTimeout(to);
+          var trackUrl = res2.ok && res2.tracked && oid ? 'order.html?id=' + oid + '&key=' + okey : null;
+          openDone(res2.ok ? 'auto' : 'failed', trackUrl);
+        });
     };
     nodes.push(sum, place, err, who, note, send); sync(); show(nodes);
   }
 
   // Success screen
-  function openDone(mode) {
+  function openDone(mode, trackUrl) {
     var nodes = [head('جهزنا طلبك')];
     var ok = el('div', 'done-mark'); ok.innerHTML = '<svg class="ico" viewBox="0 0 24 24"><path d="M5 12.500l4.500 4.500L19 7.500"/></svg>';
     nodes.push(ok);
     nodes.push(el('div', 'done-t', mode === 'auto' ? 'طلبك وصل للكافيه' : mode === 'failed' ? 'مقدرناش نبعت الطلب تلقائي. ابعته من واتساب' : 'اضغط "إرسال" في واتساب عشان الطلب يوصل للكافيه'));
     nodes.push(el('div', 'done-s', info.type + ' رقم ' + info.num.trim() + ' · ' + count() + ' صنف · ' + total() + ' ' + CUR));
     if (mode !== 'auto') { var again = el('button', 'send', mode === 'failed' ? 'ابعت على واتساب' : 'فتح واتساب تاني'); again.onclick = function () { window.open(window.__evoOrderUrl(), '_blank', 'noopener'); }; nodes.push(again); }
+    if (trackUrl) { var track = el('button', 'send', 'تابع حالة طلبك'); track.onclick = function () { location.href = trackUrl; }; nodes.push(track); }
     var fin = el('button', 'clear strong', mode === 'failed' ? 'بعتّه، طلب جديد' : mode === 'auto' ? 'طلب جديد' : 'تم الإرسال، طلب جديد'); fin.onclick = function () { cart = {}; info.note = ''; save(); refresh(); closeSheet(); toast('الطلب اتمسح، تقدر تطلب تاني'); }; nodes.push(fin);
     var keep = el('button', 'clear', 'رجوع للمنيو (الطلب يفضل محفوظ)'); keep.onclick = closeSheet; nodes.push(keep);
     show(nodes);
@@ -203,5 +215,7 @@
     if (!n && !sheet.hidden && body.querySelector('.sheet-lines')) closeSheet();
   }
   bar.onclick = openCart;
-  decorate(); refresh();
+  // Wait for menu overrides (prices, out-of-stock) before decorating, when the
+  // data layer is configured; otherwise decorate immediately as before.
+  (window.__evoDataReady || Promise.resolve()).then(function () { decorate(); refresh(); });
 })();

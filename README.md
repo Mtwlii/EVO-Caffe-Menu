@@ -78,3 +78,77 @@ Longer term
 - [ ] Small admin page so the owner edits prices and availability from his phone
 - [ ] Online ordering with payment (Instapay or card) and order status for the customer
 - [ ] Reusable template to sell the same menu and ordering system to other cafes
+
+## Scale-up (branch `scale-up`)
+
+Building on a separate branch; `main` and the live site stay untouched. Preview deploy comes from Vercel automatically.
+
+- [x] Milestone 1 code: admin dashboard (`/admin`) to edit prices and mark items out of stock or hidden; overrides stored in Supabase (`db/001_menu_overrides.sql`), applied on the menu at load (`features/data/`). Static menu keeps working if the backend is unreachable.
+- [x] Milestone 2 code: customer-visible order status (accepted / preparing / ready). Staff tap inline buttons under the Telegram order message (`api/telegram.js` webhook); the customer follows along on `order.html`. Key-gated RPCs in `db/002_orders.sql`.
+- [x] Milestone 3 code: PS room booking. Staff tab in `/admin` with start/stop sessions, live timer and per-minute price calc (`db/003_rooms.sql`; edit seeded room names/rates there).
+- [x] Rooms v2 (`db/004_rooms_v2.sql`): PS4 (فور) / PS5 (فايف) room types with an editable rate matrix (type × 2 or 4 controllers), switching controllers mid-session billed per time segment, menu orders placed from a room added to its open session bill (customer picks غرفة + room code), staff can add menu items to a session manually (and remove wrong ones), discount and service charge (amount or percent) on the bill, advance payment (deposit) recorded in the shift that receives it, and a close bill showing time + items + discount/service = total, less deposit = remaining. Shifts: open/close in `/admin`; a session's bill is booked to the shift that closes it; shift close is blocked while open sessions are neither closed nor explicitly carried over; the closed shift report freezes totals (time, items, discounts, service, deposits, remainders) plus the carried-over sessions with what they accrued at handover.
+- [x] Rooms v3 (`db/005_rooms_v3.sql`): voiding an item on a session needs a reason (the item stays on the bill as struck-through, not billed), pause/resume a session (no time is billed while paused), an audit log of session actions (start, close, items added or voided with reason, deposit, carry-over, pause/resume, controller changes, who did it) shown from the shift bar. Billing stays by the exact minute, no rounding and no minimum. Receipts: after closing a room bill (and per order in the new "الطلبات" admin tab) "اطبع الإيصال" opens an 80mm receipt (EVO header, time, items, discount, service, deposit, total) and prints it through the browser print dialog; pick the cashier printer there.
+
+Setup notes for the owner:
+1. Run `db/001_menu_overrides.sql`, then `db/002_orders.sql`, then `db/003_rooms.sql`, then `db/004_rooms_v2.sql`, then `db/005_rooms_v3.sql`, then `db/006_staff_lock.sql` in the Supabase SQL editor (do not re-run 004 after 005). 006 makes only the emails in `staff_emails` count as staff (edit the insert for your admin email), and gates `attach_order_to_room` behind a server-side secret: after running 006, seed it once with `insert into app_secrets (name, hash) values ('room_attach', encode(sha256(convert_to(encode(sha256(convert_to('room-attach|' || '<TELEGRAM_BOT_TOKEN>', 'utf8')), 'hex'), 'utf8')), 'hex')) on conflict (name) do update set hash = excluded.hash;` (it must be re-seeded if the bot token changes). Also consider turning off public sign-ups in Supabase Auth settings.
+2. Put the project URL + anon key in `features/data/data.config.js` and in `api/order.js` / `api/telegram.js` (`SUPA_URL` / `SUPA_KEY`). The anon key is public by design; RLS and the per-order key protect the data.
+3. Create the admin user in Supabase Authentication (email + password). Its password lives in the password vault.
+4. Register the Telegram webhook once: `https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://<this-deployment>/api/telegram` (re-point to the production URL after merging).
+
+## Admin, rooms and billing (branch `scale-up`)
+Staff app at `/admin/` (Supabase Auth + Postgres, Vercel serverless, free tiers).
+
+### Features
+- Roles: admin (full) and cashier/staff (rooms, sessions, items, void with a required reason). Cashier permissions: Settings > "صلاحيات الكاشير" turns each cashier action on/off (start session, pause/resume, switch فردي/زوجي, VIP, void, add items, deposit, carry over to next shift, close and bill, open/close shift). Enforced in the database (RPC guards and an RLS policy), buttons are disabled in the UI, every change is recorded in `settings_audit` with who changed it. Default: everything allowed. Staff sign in with a username; admin creates, disables, resets and deletes staff from the "الموظفين" tab.
+- Room cards: start row with rate selector, live timer and total, pause/resume, switch فردي/زوجي, VIP checkbox, add items, close bill, receipt. Billing is by the exact minute (no rounding, no minimum).
+- VIP: separate hourly price matrix (room type x فردي/زوجي), editable by admin. Can be ticked mid-session. Setting "reprice elapsed time on change": whole session at the new price (default) or new price from now on (new segment). The same rule applies to فردي/زوجي changes. Every change is audited with the actor and old/new totals.
+- Audit log of voids, price changes, VIP and controller switches. Orders from the customer menu post to Telegram.
+- Offline mode: offline banner, cached rooms, closes queued in the browser and synced on reconnect with conflict handling, manual summary button, service worker (`admin/sw.js`).
+
+### Setup
+1. Create a Supabase project, run `db/*.sql` in order in the SQL editor (easiest: `node scripts/new-client.js --admin owner@cafe.com` builds `db/all.sql` 001 to 017; see `docs/ONBOARDING.md`; an existing project that has 001 to 005 needs 006 onward).
+2. Put the project URL and publishable key in the admin config. Create the admin user in Supabase Auth and add it to `staff_emails`/roles per `007`.
+3. Vercel env vars: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`; register the Telegram webhook to the deployment you want.
+4. Never commit secrets. Passwords are typed in the panel only.
+
+### Migrations from 006
+| File | Adds |
+|---|---|
+| 006_staff_lock | locks tables to staff only |
+| 007_staff_roles | admin/staff roles, staff management functions |
+| 008_settings | white-label `app_settings` (brand, theme, direction, currency, receipt, room types, shifts, labels) |
+| 009_offline_close | `close_room_session` with client end time |
+| 010_vip | VIP rates, segments and rooms; `set_session_vip` |
+| 011_reprice | reprice mode setting, `session_time_cost`, totals in audit |
+| 012_menu | customer menu tables (`menu_categories`, `menu_items`), seeded from the static page, public read, admin write |
+| 013_cashier_perms | per-action cashier permissions (`staff_can`, `set_cashier_perms`), permission audit table |
+| 014_ops | staff attendance (check in/out), shift expenses deducted from expected cash, salary advances with balances, ops audit |
+| 015_inventory | stock items, moves, recipes (auto-deduct on sale, restore on void), physical count per shift, low-stock alerts |
+| 016_hardening | one open shift only, one open session per room, stopped stock items no longer deduct |
+| 017_costs_sales | timezone and business-day settings, item/stock costs, recipes by menu item id and size, takeaway/table sales (`sales`), accepted customer orders become sales, blind stock count, idempotent add/void/expense for the offline queue, `dashboard()`, `export_all()` |
+
+### White-label settings (admin, "الإعدادات")
+Brand name, colors/theme, text direction, currency, receipt text, room types, shifts, label swaps, فردي/زوجي names, reprice mode. One client = one Supabase project + one Vercel project.
+
+### Customer menu from the database
+`index.html` keeps the static menu as a fallback. `features/data/menu-db.js` loads categories and items from Supabase (public read), renders them, caches them in localStorage (`evo-menu-cache-v1`) so the menu still opens offline after the first visit, then loads the other scripts. Admin "المنيو" tab edits categories, items (name, description, price/s, image link, hide, out of stock, featured, order). There is no print button on the customer menu (browser print still works and prints the rendered menu; receipt printing in admin is separate). Theme colors from settings (primary, accent, background, cards, text, or a preset) apply to the menu and the admin app.
+
+### Known limits (017)
+- Fallback cost is one value per menu item (recipes are per size). Accepted customer orders count as cash at the counter. Month presets in the UI use the browser clock while the dashboard uses the client timezone. The offline queue lives in one browser. Silent printing is not built in.
+
+### Roadmap
+- Menu photos upload (today: https image links), per-item options
+- Reports by shift and cashier, CSV export
+- Done: attendance, petty expenses, salary advances (tab "الحضور والمالية")
+- Done: sales/profit dashboard (tab "التقارير"), quick takeaway/table sale (tab "بيع سريع"), costs, blind count, per-client timezone, generalized offline queue, 58mm option, shift report print, `scripts/` onboarding and backup (017)
+- Done: inventory (tab "المخزون"): recipes, auto-deduct, void restore, shift count, low-stock alerts
+- Roadmap, ranked by value for selling to many cafes:
+  1. (done in 017) Sales and profit dashboard
+  2. (done in 017) Printing: shift report, takeaway slip, 58mm; silent print needs Chrome `--kiosk-printing` (documented, not in the app)
+  3. Customer accounts, memberships, prepaid hours and loyalty points
+  4. Multi-branch / multi-tenant (one project per client now; later branch_id plus tenant isolation) and one-click onboarding
+  5. Room reservations and a waiting list
+  6. Kitchen/bar display and order notifications; Telegram low-stock push
+  7. Scheduled backups and full data export; English/Arabic language switch; SaaS billing and subscription management
+  8. Payroll (salary, auto-deduct advances) and supplier purchasing
+- Multi-branch option
