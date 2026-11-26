@@ -10,7 +10,7 @@
   // ---------- white-label config (table app_settings, key 'config') ----------
   var DEFAULTS = { brand: { name: 'Cafe', logo_url: '' }, theme: {}, dir: 'rtl', currency: 'جنيه',
     receipt: { subtitle: 'إيصال', footer: 'شكراً لزيارتكم', extra: '' },
-    room_types: [{ id: 'ps4', label: 'PS4' }, { id: 'ps5', label: 'PS5' }], shifts: [], labels: '' };
+    room_types: [{ id: 'ps4', label: 'PS4' }, { id: 'ps5', label: 'PS5' }], shifts: [], labels: '', tiers: { '2': 'فردي', '4': 'زوجي' } };
   var CFG = JSON.parse(JSON.stringify(DEFAULTS));
   var SWAP = [];   // [[from, to]] phrase overrides: currency + custom labels
   function mergeCfg(v) {
@@ -18,9 +18,11 @@
     CFG = { brand: Object.assign({}, DEFAULTS.brand, v.brand), theme: Object.assign({}, v.theme), dir: v.dir === 'ltr' ? 'ltr' : 'rtl',
       currency: v.currency || DEFAULTS.currency, receipt: Object.assign({}, DEFAULTS.receipt, v.receipt),
       room_types: (v.room_types && v.room_types.length) ? v.room_types : DEFAULTS.room_types,
-      shifts: v.shifts || [], labels: v.labels || '' };
+      shifts: v.shifts || [], labels: v.labels || '', tiers: Object.assign({ '2': 'فردي', '4': 'زوجي' }, v.tiers) };
   }
   function typeLabel(id) { var t = CFG.room_types.find(function (x) { return x.id === id; }); return t ? t.label : id; }
+  function tierLabel(c) { return (CFG.tiers && CFG.tiers[c]) || String(c); }
+  function rkey(t, c, vip) { return t + '|' + c + (vip ? '|v' : ''); }
   function typeIds() { return CFG.room_types.map(function (t) { return t.id; }); }
   function swapText(t) { for (var i = 0; i < SWAP.length; i++) if (t.indexOf(SWAP[i][0]) >= 0) t = t.split(SWAP[i][0]).join(SWAP[i][1]); return t; }
   var done = new WeakSet(), obs = null;
@@ -357,7 +359,7 @@
     (segs || []).forEach(function (g) {
       var end = g.ended_at ? new Date(g.ended_at).getTime() : (until || Date.now());
       var mins = Math.max(0, (end - new Date(g.started_at).getTime()) / 60000);
-      cost += mins / 60 * (RATES[type + '|' + g.controllers] || 0);
+      cost += mins / 60 * (RATES[rkey(type, g.controllers, g.vip)] || 0);
     });
     return cost;
   }
@@ -395,7 +397,7 @@
 
   function renderRooms(rooms, open, rateRows, openShift, pastShifts, segs, items) {
     clearTimers();
-    RATES = {}; (rateRows || []).forEach(function (r) { RATES[r.room_type + '|' + r.controllers] = r.hourly_price; });
+    RATES = {}; (rateRows || []).forEach(function (r) { RATES[rkey(r.room_type, r.controllers, r.vip)] = r.hourly_price; });
     var host = $('rooms'); host.textContent = '';
     var dl = $('shiftNames'); if (dl) { dl.textContent = ''; CFG.shifts.forEach(function (n) { var o = el('option'); o.value = n; dl.appendChild(o); }); }
 
@@ -444,23 +446,26 @@
     var ratesBox = el('div', 'room rates adm-only');
     ratesBox.appendChild(el('div', 'r-title', 'أسعار الساعة'));
     var rateInputs = {};
-    typeIds().forEach(function (t) {
-      [2, 4].forEach(function (c) {
-        var row = el('div', 'rate-row');
-        row.appendChild(el('span', null, typeLabel(t) + ' · ' + c + ' إيد'));
-        var inp = el('input', 'mini-in'); inp.inputMode = 'numeric';
-        inp.value = RATES[t + '|' + c] != null ? RATES[t + '|' + c] : '';
-        inp.setAttribute('aria-label', 'سعر ' + typeLabel(t) + ' ' + c + ' إيد');
-        rateInputs[t + '|' + c] = inp;
-        row.append(inp, el('span', 'muted', 'جنيه/ساعة'));
-        ratesBox.appendChild(row);
+    [false, true].forEach(function (vip) {
+      if (vip) ratesBox.appendChild(el('div', 'r-title r-vip-title', 'أسعار VIP (غرفة VIP)'));
+      typeIds().forEach(function (t) {
+        [2, 4].forEach(function (c) {
+          var row = el('div', 'rate-row');
+          row.appendChild(el('span', null, typeLabel(t) + ' · ' + tierLabel(c) + (vip ? ' · VIP' : '')));
+          var k = rkey(t, c, vip), inp = el('input', 'mini-in'); inp.inputMode = 'numeric';
+          inp.value = RATES[k] != null ? RATES[k] : '';
+          inp.setAttribute('aria-label', 'سعر ' + typeLabel(t) + ' ' + tierLabel(c) + (vip ? ' VIP' : ''));
+          rateInputs[k] = inp;
+          row.append(inp, el('span', 'muted', 'جنيه/ساعة'));
+          ratesBox.appendChild(row);
+        });
       });
     });
     var saveRates = el('button', 'btn small', 'حفظ الأسعار');
     saveRates.onclick = function () {
       var body = Object.keys(rateInputs).map(function (k) {
         var d = digits(rateInputs[k].value);
-        return { room_type: k.split('|')[0], controllers: Number(k.split('|')[1]), hourly_price: d.length ? d[0] : 0 };
+        return { room_type: k.split('|')[0], controllers: Number(k.split('|')[1]), vip: k.split('|')[2] === 'v', hourly_price: d.length ? d[0] : 0 };
       });
       if (body.some(function (r) { return !(r.hourly_price >= 0 && r.hourly_price <= 2000); })) { toast('السعر لازم يكون بين 0 و 2000', true); return; }
       saveRates.disabled = true;
@@ -476,10 +481,25 @@
     rooms.forEach(function (r) {
       var ses = (open || []).find(function (x) { return x.room_id === r.id; });
       var card = el('div', 'room');
+      var sg0 = ses ? (segs || []).filter(function (g) { return g.session_id === ses.id; }) : [];
+      var curSeg0 = sg0.length ? sg0[sg0.length - 1] : null;
+      var isVip = ses ? !!(curSeg0 && curSeg0.vip) : !!r.vip;
       var top = el('div', 'r-top');
-      top.appendChild(el('span', 'r-name', r.name + ' (' + typeLabel(r.room_type || typeIds()[0]) + ')'));
+      top.appendChild(el('span', 'r-name', r.name + ' (' + typeLabel(r.room_type || typeIds()[0]) + ')' + (isVip ? ' ⭐ VIP' : '')));
       top.appendChild(el('span', 'r-state ' + (ses ? (ses.paused_at ? 'paused' : 'busy') : 'free'), ses ? (ses.paused_at ? 'متوقفة' : 'مشغولة') : 'فاضية'));
       card.appendChild(top);
+      if (isVip) card.classList.add('is-vip');
+      var vipL = el('label', 'chk r-vipchk'), vipC = el('input'); vipC.type = 'checkbox'; vipC.checked = isVip;
+      vipC.setAttribute('aria-label', 'VIP ' + r.name);
+      vipL.append(vipC, document.createTextNode('VIP'));
+      if (ses && ses.paused_at) { vipC.disabled = true; vipL.title = 'كمّل الجلسة الأول'; }
+      vipC.onchange = function () {
+        var want = vipC.checked; vipC.disabled = true;
+        var call = ses ? rpc('set_session_vip', { p_session_id: ses.id, p_vip: want }) : rpc('set_room_vip', { p_room_id: r.id, p_vip: want });
+        call.then(function () { toast(want ? 'VIP شغّال من دلوقتي' : 'VIP اتقفل من دلوقتي'); bootRooms(); })
+          .catch(function (e) { toast('فشل تغيير VIP: ' + (e.offline ? 'محتاج نت' : e.message), true); vipC.checked = !want; vipC.disabled = false; });
+      };
+      card.appendChild(vipL);
 
       // room settings (name / code / type)
       var set = el('div', 'r-set adm-only');
@@ -501,7 +521,7 @@
       set.append(nameIn, codeIn, typeIn, saveRoom);
       card.appendChild(set);
       card.appendChild(el('div', 'muted small-note',
-        'السعر دلوقتي: 2 إيد ' + (RATES[(r.room_type || typeIds()[0]) + '|2'] || 0) + ' / 4 إيد ' + (RATES[(r.room_type || typeIds()[0]) + '|4'] || 0) + ' جنيه في الساعة · كود الطلب: ' + (r.code || '—')));
+        'السعر دلوقتي' + (isVip ? ' (VIP)' : '') + ': ' + tierLabel(2) + ' ' + (RATES[rkey(r.room_type || typeIds()[0], 2, isVip)] || 0) + ' / ' + tierLabel(4) + ' ' + (RATES[rkey(r.room_type || typeIds()[0], 4, isVip)] || 0) + ' جنيه في الساعة · كود الطلب: ' + (r.code || '—')));
 
       if (ses) {
         var sSegs = (segs || []).filter(function (g) { return g.session_id === ses.id; });
@@ -517,7 +537,7 @@
           var sv = adjCalc(serv.kind.value, digits(serv.val.value)[0], base - d) ;
           if (serv.kind.value === 'amount') sv = Math.max(Number(digits(serv.val.value)[0]) || 0, 0);
           var ms = sSegs.reduce(function (a, g) { return a + (g.ended_at ? new Date(g.ended_at).getTime() : Date.now()) - new Date(g.started_at).getTime(); }, 0);
-          timer.textContent = fmtDur(ms) + (openSeg ? ' · ' + openSeg.controllers + ' إيد' : ' · ⏸ متوقفة');
+          timer.textContent = fmtDur(ms) + (openSeg ? ' · ' + tierLabel(openSeg.controllers) + (openSeg.vip ? ' · VIP' : '') : ' · ⏸ متوقفة' + (isVip ? ' · VIP' : ''));
           var tot = Math.round(base - d + sv);
           bill.textContent = 'الوقت: ' + Math.round(tCost) + ' + الأصناف: ' + iCost +
             (d ? ' − خصم ' + d : '') + (sv ? ' + خدمة ' + sv : '') + ' = ' + tot + ' جنيه' +
@@ -527,12 +547,12 @@
         card.append(timer, bill);
 
         // controller switch
-        var sw = el('button', 'btn small ghost', openSeg && openSeg.controllers === 2 ? 'حوّل لـ 4 إيد' : 'حوّل لـ 2 إيد');
+        var sw = el('button', 'btn small ghost', 'حوّل لـ ' + tierLabel(openSeg && openSeg.controllers === 2 ? 4 : 2));
         sw.onclick = function () {
           sw.disabled = true;
           var to = openSeg && openSeg.controllers === 2 ? 4 : 2;
           withAuth(function () { return api('/rest/v1/rpc/switch_session_controllers', { method: 'POST', body: JSON.stringify({ p_session_id: ses.id, p_controllers: to }) }); })
-            .then(function () { toast('اتحولت لـ ' + to + ' إيد'); bootRooms(); })
+            .then(function () { toast('اتحولت لـ ' + tierLabel(to)); bootRooms(); })
             .catch(function (e) { toast('فشل التحويل: ' + e.message, true); sw.disabled = false; });
         };
         if (!openSeg) { sw.disabled = true; }
@@ -673,7 +693,7 @@
                   var lines = [['الوقت (' + rep.minutes + ' دقيقة)', rep.time_amount + ' جنيه']];
                   if (rcSegs.length > 1) rcSegs.forEach(function (g) {
                     var m = Math.round(((g.ended_at ? new Date(g.ended_at).getTime() : now) - new Date(g.started_at).getTime()) / 60000);
-                    if (m > 0) lines.push(['   ' + g.controllers + ' إيد · ' + m + ' د', '', 'sub']);
+                    if (m > 0) lines.push(['   ' + tierLabel(g.controllers) + (g.vip ? ' · VIP' : '') + ' · ' + m + ' د', '', 'sub']);
                   });
                   rcItems.forEach(function (x) { lines.push([x.qty + ' × ' + x.name, (x.qty * x.price) + ' جنيه']); });
                   var totals = (rep.discount_amount || rep.service_amount) ? [['المجموع', (rep.time_amount + rep.items_amount) + ' جنيه']] : [];
@@ -682,7 +702,7 @@
                   totals.push(['الإجمالي', rep.total + ' جنيه', 'total']);
                   if (rep.deposit) { totals.push(['مدفوع مقدم', '− ' + rep.deposit + ' جنيه']); totals.push(['الباقي', rep.remaining + ' جنيه', 'total']); }
                   showReceipt({ place: r.name + ' (' + typeLabel(r.room_type || typeIds()[0]) + ')',
-                    meta: [['من', stamp(startedAt)], ['إلى', stamp(new Date(now))]], lines: lines, totals: totals });
+                    meta: [['من', stamp(startedAt)], ['إلى', stamp(new Date(now))]].concat(rcSegs.some(function (g) { return g.vip; }) ? [['النوع', 'VIP']] : []), lines: lines, totals: totals });
                 };
                 return pb;
               })());
@@ -693,8 +713,8 @@
         card.appendChild(close);
       } else {
         var startRow = el('div', 'r-start');
-        var ctlSel = el('select', 'mini-s r-ctl'); ctlSel.setAttribute('aria-label', 'عدد الإيدات');
-        [2, 4].forEach(function (c) { var op = el('option', null, c + ' إيد'); op.value = c; ctlSel.appendChild(op); });
+        var ctlSel = el('select', 'mini-s r-ctl'); ctlSel.setAttribute('aria-label', 'فردي / زوجي');
+        [2, 4].forEach(function (c) { var op = el('option', null, tierLabel(c)); op.value = c; ctlSel.appendChild(op); });
         var start = el('button', 'btn', '▶ بدء جلسة');
         start.onclick = function () {
           if (OFFLINE) { toast('بدء جلسة جديدة محتاج نت. اكتب وقت البداية على ورقة', true); return; }
@@ -745,7 +765,7 @@
 
   // ---------- audit log ----------
   var AUDIT_AR = { start: 'بدء جلسة', close: 'إنهاء وتحصيل', item_add: 'إضافة صنف', item_void: 'إلغاء صنف', deposit: 'مقدم',
-    carry_over: 'نقل للوردية الجاية', pause: 'إيقاف مؤقت', resume: 'استئناف', controllers: 'تغيير الإيدي' };
+    carry_over: 'نقل للوردية الجاية', pause: 'إيقاف مؤقت', resume: 'استئناف', controllers: 'تغيير فردي/زوجي', vip: 'تغيير VIP' };
   function auditText(a) {
     var d = a.detail || {};
     switch (a.action) {
@@ -753,7 +773,8 @@
       case 'item_void': return d.qty + ' × ' + d.name + ' · السبب: ' + (d.reason || '');
       case 'deposit': return d.amount + ' جنيه';
       case 'close': return 'الإجمالي ' + d.total + (d.discount ? ' · خصم ' + d.discount : '') + (d.service ? ' · خدمة ' + d.service : '');
-      case 'controllers': return d.from + ' ← ' + d.to + ' إيد';
+      case 'controllers': return tierLabel(d.from) + ' ← ' + tierLabel(d.to);
+      case 'vip': return (d.from ? 'VIP' : 'عادي') + ' ← ' + (d.to ? 'VIP' : 'عادي');
       default: return '';
     }
   }
@@ -787,7 +808,7 @@
     ];
     (rep.handed_over || []).forEach(function (h, i) {
       if (!i) lines.push(['جلسات اتنقلت للوردية الجاية:', '', 'sub']);
-      lines.push([h.room + ' · ' + h.minutes + ' دقيقة · ' + (h.controllers || 2) + ' إيد', 'متراكم ' + h.subtotal + ' جنيه']);
+      lines.push([h.room + ' · ' + h.minutes + ' دقيقة · ' + tierLabel(h.controllers || 2), 'متراكم ' + h.subtotal + ' جنيه']);
     });
     billModal(title, lines);
   }
@@ -851,7 +872,7 @@
     var b = CFG.brand, t = CFG.theme || {}, rc = CFG.receipt;
     $('sName').value = b.name; $('sLogo').value = b.logo_url || '';
     $('sPrimary').value = t.primary || '#22d3ee'; $('sBg').value = t.bg || '#080c15'; $('sSurface').value = t.surface || '#121a2c'; $('sText').value = t.text || '#eaf0ff';
-    $('sDir').value = CFG.dir; $('sCur').value = CFG.currency;
+    $('sT2').value = tierLabel(2); $('sT4').value = tierLabel(4); $('sDir').value = CFG.dir; $('sCur').value = CFG.currency;
     $('sSub').value = rc.subtitle; $('sFoot').value = rc.footer; $('sExtra').value = rc.extra || '';
     $('sTypes').value = CFG.room_types.map(function (x) { return x.id + '|' + x.label; }).join('\n');
     $('sShifts').value = CFG.shifts.join('\n'); $('sLabels').value = CFG.labels || '';
@@ -863,6 +884,7 @@
     if (/^https?:/.test($('sLogo').value.trim()) && !/^https:/.test($('sLogo').value.trim())) { toast('رابط اللوجو لازم https', true); return; }
     var val = { brand: { name: $('sName').value.trim().slice(0, 40) || 'Cafe', logo_url: $('sLogo').value.trim() },
       theme: { primary: $('sPrimary').value, bg: $('sBg').value, surface: $('sSurface').value, text: $('sText').value },
+      tiers: { '2': $('sT2').value.trim().slice(0, 20) || 'فردي', '4': $('sT4').value.trim().slice(0, 20) || 'زوجي' },
       dir: $('sDir').value, currency: $('sCur').value.trim().slice(0, 12) || 'جنيه',
       receipt: { subtitle: $('sSub').value.trim(), footer: $('sFoot').value.trim(), extra: $('sExtra').value.trim() },
       room_types: types, shifts: $('sShifts').value.split('\n').map(function (x) { return x.trim(); }).filter(Boolean).slice(0, 12),

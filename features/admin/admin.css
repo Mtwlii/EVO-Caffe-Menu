@@ -113,6 +113,10 @@ textarea{font-family:inherit;font-size:14px;padding:10px 12px;border-radius:var(
 .r-start .btn{flex:1;min-height:48px;font-size:16px;width:auto}
 .room[data-dir]{}
 .off-banner{position:sticky;top:60px;z-index:6;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;background:#3b2a05;color:var(--a-amber);border-bottom:1px solid var(--a-amber);padding:8px 14px;font-weight:700;font-size:13px;text-align:center}
+.r-vipchk{align-self:flex-start;font-weight:800;font-size:13px;color:var(--a-amber)}
+.room.is-vip{border-color:color-mix(in srgb,var(--a-amber) 60%,var(--a-line))}
+.room.is-vip::before{background:var(--a-amber);box-shadow:0 0 14px var(--a-amber)}
+.r-vip-title{margin-top:12px;color:var(--a-amber)}
 /* bill + receipt dialog */
 .bill-ov{position:fixed;inset:0;background:rgba(3,6,14,.78);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}
 .bill-box{background:var(--a-surface);border:1px solid var(--a-line2);border-radius:18px;padding:20px;width:100%;max-width:360px;box-shadow:0 24px 60px rgba(0,0,0,.5)}
