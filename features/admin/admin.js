@@ -72,12 +72,75 @@
     opts = opts || {};
     opts.headers = Object.assign({ apikey: cfg.anonKey, 'content-type': 'application/json' }, opts.headers || {});
     if (ses && ses.access_token) opts.headers.authorization = 'Bearer ' + ses.access_token;
-    return fetch(base + path, opts).then(function (r) {
+    return fetch(base + path, opts).catch(function (e) { setOffline(true); e.offline = true; throw e; }).then(function (r) {
+      if (OFFLINE) setOffline(false);
       return r.json().catch(function () { return null; }).then(function (j) {
         if (!r.ok) { var e = new Error((j && (j.message || j.error_description || j.error)) || ('HTTP ' + r.status)); e.status = r.status; throw e; }
         return j;
       });
     });
+  }
+  // ---------- offline resilience ----------
+  var OFFLINE = false, pingT = null, Q_KEY = 'evo-queue', C_KEY = 'evo-rooms-cache';
+  function getQ() { try { return JSON.parse(localStorage.getItem(Q_KEY) || '[]'); } catch (e) { return []; } }
+  function setQ(q) { try { localStorage.setItem(Q_KEY, JSON.stringify(q)); } catch (e) {} paintBanner(); }
+  function paintBanner() {
+    var b = $('offBanner'); if (!b) return; var n = getQ().length;
+    b.hidden = !OFFLINE && !n;
+    b.querySelector('.ob-t').textContent = OFFLINE
+      ? 'مفيش نت. الشغل شغال من البيانات المحفوظة' + (n ? ' · ' + n + ' حساب مستني يتسجّل' : '') + '. الوقت والحساب بيكملوا لوحدهم.'
+      : n + ' حساب اتقفل أوفلاين وبيتسجّل دلوقتي...';
+  }
+  function setOffline(v) {
+    if (v === OFFLINE) return; OFFLINE = v; paintBanner();
+    clearInterval(pingT);
+    if (v) pingT = setInterval(function () { fetch(base + '/auth/v1/health', { headers: { apikey: cfg.anonKey } }).then(function () { setOffline(false); }).catch(function () {}); }, 8000);
+    else { flushQ(); }
+  }
+  window.addEventListener('offline', function () { setOffline(true); });
+  window.addEventListener('online', function () { fetch(base + '/auth/v1/health', { headers: { apikey: cfg.anonKey } }).then(function () { setOffline(false); }).catch(function () {}); });
+  var flushing = false;
+  function flushQ() {
+    if (flushing) return; var q = getQ(); if (!q.length || OFFLINE) { paintBanner(); return; }
+    flushing = true;
+    (function next() {
+      q = getQ(); if (!q.length) { flushing = false; paintBanner(); if ($('roomsTab') && !$('roomsTab').hidden) bootRooms(); return; }
+      var it = q[0];
+      withAuth(function () { return api('/rest/v1/rpc/close_room_session', { method: 'POST', body: JSON.stringify(it.body) }); })
+        .then(function (rep) {
+          setQ(getQ().slice(1));
+          toast(rep.total === it.local_total ? 'اتسجّل حساب ' + it.room + ': ' + rep.total + ' جنيه' : 'اتسجّل حساب ' + it.room + ' بإجمالي ' + rep.total + ' (على الجهاز كان ' + it.local_total + ')', rep.total !== it.local_total);
+          next();
+        })
+        .catch(function (e) {
+          if (e.offline) { flushing = false; return; }
+          // server refused (session already closed elsewhere, etc): keep a visible record, do not retry forever
+          setQ(getQ().slice(1)); var c = []; try { c = JSON.parse(localStorage.getItem('evo-conflicts') || '[]'); } catch (x) {}
+          c.push({ room: it.room, total: it.local_total, at: it.at, err: e.message }); try { localStorage.setItem('evo-conflicts', JSON.stringify(c.slice(-20))); } catch (x) {}
+          toast('تعارض في حساب ' + it.room + ': ' + e.message + ' · راجع الحساب يدوي', true); next();
+        });
+    })();
+  }
+  function manualSummary() {
+    var c = null; try { c = JSON.parse(localStorage.getItem(C_KEY) || 'null'); } catch (e) {}
+    var lines = [];
+    if (!c) lines.push(['مفيش بيانات محفوظة على الجهاز', '']);
+    else {
+      var p = c.p, rooms = p[0] || [], open = p[1] || [], segs = p[5] || [], items = p[6] || [];
+      lines.push(['آخر تحديث', stamp(new Date(c.t)), 'sub']);
+      open.forEach(function (ses) {
+        var r = rooms.find(function (x) { return x.id === ses.room_id; }) || { name: '?' };
+        var ss = segs.filter(function (g) { return g.session_id === ses.id; }), its = items.filter(function (x) { return x.session_id === ses.id && !x.voided_at; });
+        var ms = ss.reduce(function (a, g) { return a + (g.ended_at ? new Date(g.ended_at).getTime() : Date.now()) - new Date(g.started_at).getTime(); }, 0);
+        var cost = Math.round(timeCostOf(ss, ses.room_type || r.room_type) + itemsCostOf(its));
+        lines.push([r.name + ' · بدأت ' + stamp(new Date(ses.started_at)) + ' · ' + Math.round(ms / 60000) + ' د', cost + ' جنيه']);
+        its.forEach(function (x) { lines.push(['   ' + x.qty + ' × ' + x.name, (x.qty * x.price) + ' جنيه', 'sub']); });
+        if (ses.deposit_amount) lines.push(['   مقدم مدفوع', ses.deposit_amount + ' جنيه', 'sub']);
+      });
+      if (!open.length) lines.push(['مفيش جلسات مفتوحة', '']);
+    }
+    getQ().forEach(function (it) { lines.push(['مقفول أوفلاين: ' + it.room + ' · ' + stamp(new Date(it.at)), it.local_total + ' جنيه']); });
+    billModal('ملخص يدوي (من الجهاز)', lines);
   }
   function refreshSes() {
     if (!ses || !ses.refresh_token) return Promise.reject(new Error('no session'));
@@ -277,14 +340,14 @@
       ]);
     }).then(function (p) {
       var open = p[1] || [];
-      if (!open.length) return p.concat([[], []]);
+      if (!open.length) { p = p.concat([[], []]); try { localStorage.setItem(C_KEY, JSON.stringify({ t: Date.now(), p: p })); } catch (e) {} return p; }
       var ids = open.map(function (x) { return x.id; }).join(',');
       return withAuth(function () {
         return Promise.all([
           api('/rest/v1/room_session_segments?session_id=in.(' + ids + ')&select=*'),
           api('/rest/v1/session_items?session_id=in.(' + ids + ')&select=*&order=id')
         ]);
-      }).then(function (extra) { return p.concat(extra); });
+      }).then(function (extra) { p = p.concat(extra); try { localStorage.setItem(C_KEY, JSON.stringify({ t: Date.now(), p: p })); } catch (e) {} return p; });
     });
   }
 
@@ -575,7 +638,24 @@
             p_discount_kind: disc.kind.value || null, p_discount_value: digits(disc.val.value)[0] || 0,
             p_service_kind: serv.kind.value || null, p_service_value: digits(serv.val.value)[0] || 0
           };
+          var closeAt = Date.now();
+          body.p_ended_at = new Date(closeAt).toISOString();
+          function localRep() {
+            var tc = timeCostOf(sSegs, ses.room_type || r.room_type || typeIds()[0], closeAt), ic = itemsCostOf(sItems), bs = tc + ic;
+            var d = adjCalc(disc.kind.value, digits(disc.val.value)[0], bs), sv = adjCalc(serv.kind.value, digits(serv.val.value)[0], bs - d);
+            if (serv.kind.value === 'amount') sv = Math.max(Number(digits(serv.val.value)[0]) || 0, 0);
+            var ms = sSegs.reduce(function (a, g) { return a + (g.ended_at ? new Date(g.ended_at).getTime() : closeAt) - new Date(g.started_at).getTime(); }, 0);
+            var tot = Math.round(bs - d + sv), dep = ses.deposit_amount || 0;
+            return { minutes: Math.round(ms / 60000), time_amount: Math.round(tc), items_amount: ic, discount_amount: Math.round(d), service_amount: Math.round(sv), total: tot, deposit: dep, remaining: tot - dep, _offline: true };
+          }
           withAuth(function () { return api('/rest/v1/rpc/close_room_session', { method: 'POST', body: JSON.stringify(body) }); })
+            .catch(function (e) {
+              if (!e.offline) throw e;
+              var lr = localRep(), q = getQ();
+              q.push({ body: body, room: r.name, local_total: lr.total, at: closeAt }); setQ(q);
+              toast('أوفلاين: الحساب اتحفظ على الجهاز وهيتسجّل لما النت يرجع', true);
+              return lr;
+            })
             .then(function (rep) {
               billModal('حساب ' + r.name, [
                 ['الوقت (' + rep.minutes + ' دقيقة)', rep.time_amount + ' جنيه'],
@@ -605,7 +685,7 @@
                 };
                 return pb;
               })());
-              bootRooms();
+              if (!rep._offline) bootRooms(); else { var cc = null; try { cc = JSON.parse(localStorage.getItem(C_KEY)); } catch (x) {} bootRooms(); }
             })
             .catch(function (e) { toast('فشل الإنهاء: ' + e.message, true); close.disabled = false; });
         };
@@ -616,6 +696,7 @@
         [2, 4].forEach(function (c) { var op = el('option', null, c + ' إيد'); op.value = c; ctlSel.appendChild(op); });
         var start = el('button', 'btn', '▶ بدء جلسة');
         start.onclick = function () {
+          if (OFFLINE) { toast('بدء جلسة جديدة محتاج نت. اكتب وقت البداية على ورقة', true); return; }
           start.disabled = true;
           withAuth(function () { return api('/rest/v1/rpc/start_room_session', { method: 'POST', body: JSON.stringify({ p_room_id: r.id, p_controllers: Number(ctlSel.value) }) }); })
             .then(function () { toast('بدأت الجلسة: ' + r.name); bootRooms(); })
@@ -712,7 +793,14 @@
 
   function bootRooms() {
     loadRooms().then(function (p) { renderRooms(p[0] || [], p[1] || [], p[2] || [], p[3] || [], p[4] || [], p[5] || [], p[6] || []); })
-      .catch(function (e) { toast('فشل تحميل الغرف: ' + e.message, true); });
+      .catch(function (e) {
+        var c = null; try { c = JSON.parse(localStorage.getItem(C_KEY) || 'null'); } catch (x) {}
+        if (e.offline && c) {
+          var done = getQ().map(function (x) { return x.body.p_session_id; }), p = c.p;
+          renderRooms(p[0] || [], (p[1] || []).filter(function (x) { return done.indexOf(x.id) < 0; }), p[2] || [], p[3] || [], p[4] || [], p[5] || [], p[6] || []);
+          toast('أوفلاين: معروض من آخر نسخة محفوظة (' + stamp(new Date(c.t)) + ')', true);
+        } else toast('فشل تحميل الغرف: ' + e.message, true);
+      });
   }
 
   // ---------- orders tab: recent menu orders + receipt ----------
@@ -837,6 +925,11 @@
       .catch(function (e) { toast('فشل: ' + e.message, true); })
       .then(function () { $('staffAdd').disabled = false; });
   };
+
+  $('obSummary').onclick = manualSummary;
+  paintBanner();
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
+  setTimeout(flushQ, 1500);
 
   // ---------- boot ----------
   function boot() {
