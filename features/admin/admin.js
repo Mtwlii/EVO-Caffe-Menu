@@ -214,7 +214,7 @@
     return cost;
   }
   function itemsCostOf(items) {
-    return (items || []).reduce(function (a, x) { return a + x.price * x.qty; }, 0);
+    return (items || []).reduce(function (a, x) { return x.voided_at ? a : a + x.price * x.qty; }, 0);
   }
   function menuChoices() {
     var out = [];
@@ -276,6 +276,9 @@
       bar.append(lbl, openSh);
       bar.appendChild(el('span', 'muted', 'مفيش وردية مفتوحة — الحسابات مش بتتسجل في وردية'));
     }
+    var auditBtn = el('button', 'btn small ghost', 'سجل العمليات');
+    auditBtn.onclick = showAudit;
+    bar.appendChild(auditBtn);
     host.appendChild(bar);
 
     // --- past shifts ---
@@ -346,7 +349,10 @@
         }).then(function () { toast('الغرفة اتحفظت'); bootRooms(); })
           .catch(function (e) { toast('فشل حفظ الغرفة: ' + e.message, true); saveRoom.disabled = false; });
       };
-      set.append(nameIn, codeIn, typeIn, saveRoom);
+      var qrBtn = el('button', 'btn small ghost', 'QR');
+      qrBtn.onclick = function () { showQr(r); };
+      if (!r.code) qrBtn.disabled = true;
+      set.append(nameIn, codeIn, typeIn, saveRoom, qrBtn);
       card.appendChild(set);
       card.appendChild(el('div', 'muted small-note',
         'السعر دلوقتي: 2 إيد ' + (RATES[(r.room_type || 'ps4') + '|2'] || 0) + ' / 4 إيد ' + (RATES[(r.room_type || 'ps4') + '|4'] || 0) + ' جنيه في الساعة · كود الطلب: ' + (r.code || '—')));
@@ -364,8 +370,8 @@
           var d = adjCalc(disc.kind.value, digits(disc.val.value)[0], base);
           var sv = adjCalc(serv.kind.value, digits(serv.val.value)[0], base - d) ;
           if (serv.kind.value === 'amount') sv = Math.max(Number(digits(serv.val.value)[0]) || 0, 0);
-          var ms = Date.now() - new Date(ses.started_at).getTime();
-          timer.textContent = fmtDur(ms) + (openSeg ? ' · ' + openSeg.controllers + ' إيد' : '');
+          var ms = sSegs.reduce(function (a, g) { return a + (g.ended_at ? new Date(g.ended_at).getTime() : Date.now()) - new Date(g.started_at).getTime(); }, 0);
+          timer.textContent = fmtDur(ms) + (openSeg ? ' · ' + openSeg.controllers + ' إيد' : ' · ⏸ متوقفة');
           var tot = Math.round(base - d + sv);
           bill.textContent = 'الوقت: ' + Math.round(tCost) + ' + الأصناف: ' + iCost +
             (d ? ' − خصم ' + d : '') + (sv ? ' + خدمة ' + sv : '') + ' = ' + tot + ' جنيه' +
@@ -383,7 +389,19 @@
             .then(function () { toast('اتحولت لـ ' + to + ' إيد'); bootRooms(); })
             .catch(function (e) { toast('فشل التحويل: ' + e.message, true); sw.disabled = false; });
         };
+        if (!openSeg) { sw.disabled = true; }
         card.appendChild(sw);
+
+        // pause / resume (no time billed while paused)
+        var pz = el('button', 'btn small ghost', ses.paused_at ? 'كمّل الجلسة ▶' : 'إيقاف مؤقت ⏸');
+        pz.onclick = function () {
+          pz.disabled = true;
+          var fn = ses.paused_at ? 'resume_session' : 'pause_session';
+          withAuth(function () { return api('/rest/v1/rpc/' + fn, { method: 'POST', body: JSON.stringify({ p_session_id: ses.id }) }); })
+            .then(function () { toast(ses.paused_at ? 'الجلسة كملت' : 'الجلسة متوقفة، الوقت مش بيتحسب'); bootRooms(); })
+            .catch(function (e) { toast('فشل: ' + e.message, true); pz.disabled = false; });
+        };
+        card.appendChild(pz);
 
         // deposit (advance payment)
         var depRow = el('div', 'r-add');
@@ -414,16 +432,27 @@
         // items
         var list = el('div', 'r-items');
         sItems.forEach(function (x) {
-          var row = el('div', 'r-item');
-          row.appendChild(el('span', null, x.qty + ' × ' + x.name + ' = ' + (x.qty * x.price) + ' جنيه' + (x.source === 'order' ? ' (من المنيو)' : '')));
-          var del = el('button', 'btn small ghost danger', 'مسح');
-          del.onclick = function () {
-            del.disabled = true;
-            withAuth(function () { return api('/rest/v1/session_items?id=eq.' + x.id, { method: 'DELETE', headers: { prefer: 'return=minimal' } }); })
-              .then(function () { toast('اتمسح'); bootRooms(); })
-              .catch(function (e) { toast('فشل المسح: ' + e.message, true); del.disabled = false; });
-          };
-          row.appendChild(del);
+          var row = el('div', 'r-item' + (x.voided_at ? ' voided' : ''));
+          row.appendChild(el('span', null, x.qty + ' × ' + x.name + ' = ' + (x.qty * x.price) + ' جنيه' + (x.source === 'order' ? ' (من المنيو)' : '') +
+            (x.voided_at ? ' · ملغي: ' + (x.void_reason || '') : '')));
+          if (!x.voided_at) {
+            var del = el('button', 'btn small ghost danger', 'إلغاء');
+            del.onclick = function () {
+              del.hidden = true;
+              var why = el('input', 'mini-in wide'); why.placeholder = 'سبب الإلغاء (مطلوب)'; why.maxLength = 120; why.setAttribute('aria-label', 'سبب الإلغاء');
+              var okb = el('button', 'btn small danger', 'تأكيد الإلغاء');
+              okb.onclick = function () {
+                var rs = why.value.trim();
+                if (rs.length < 2) { toast('اكتب سبب الإلغاء', true); why.focus(); return; }
+                okb.disabled = true;
+                withAuth(function () { return api('/rest/v1/rpc/void_session_item', { method: 'POST', body: JSON.stringify({ p_item_id: x.id, p_reason: rs }) }); })
+                  .then(function () { toast('اتلغى: ' + x.name); bootRooms(); })
+                  .catch(function (e) { toast('فشل الإلغاء: ' + e.message, true); okb.disabled = false; });
+              };
+              row.append(why, okb);
+            };
+            row.appendChild(del);
+          }
           list.appendChild(row);
         });
         if (!sItems.length) list.appendChild(el('div', 'muted', 'مفيش أصناف على الجلسة لحد دلوقتي'));
@@ -526,6 +555,57 @@
     var addRow2 = el('div', 'r-add'); addRow2.append(nName, nCode, nType, addRoom);
     addBox.appendChild(addRow2);
     host.appendChild(addBox);
+  }
+
+
+  // ---------- QR per room: opens the menu with the room already selected ----------
+  function showQr(r) {
+    var url = location.origin + '/?room=' + encodeURIComponent(r.code);
+    var ov = el('div', 'bill-ov'), box = el('div', 'bill-box qr-box');
+    box.appendChild(el('h3', null, 'QR ' + r.name));
+    var holder = el('div', 'qr-img');
+    try {
+      var q = qrcode(0, 'M'); q.addData(url); q.make();
+      holder.innerHTML = q.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
+    } catch (e) { holder.textContent = 'مقدرتش أعمل QR'; }
+    box.appendChild(holder);
+    box.appendChild(el('div', 'qr-url', url));
+    box.appendChild(el('div', 'muted small-note', 'الزبون يمسح الكود، المنيو بيفتح على ' + r.name + ' والطلب بينزل على حساب الجلسة'));
+    var pr = el('button', 'btn small ghost', 'اطبع');
+    pr.onclick = function () { document.body.classList.add('print-qr'); window.print(); document.body.classList.remove('print-qr'); };
+    var ok = el('button', 'btn', 'تم'); ok.onclick = function () { ov.remove(); };
+    box.append(pr, ok); ov.appendChild(box); document.body.appendChild(ov);
+  }
+
+  // ---------- audit log ----------
+  var AUDIT_AR = { start: 'بدء جلسة', close: 'إنهاء وتحصيل', item_add: 'إضافة صنف', item_void: 'إلغاء صنف', deposit: 'مقدم',
+    carry_over: 'نقل للوردية الجاية', pause: 'إيقاف مؤقت', resume: 'استئناف', controllers: 'تغيير الإيدي' };
+  function auditText(a) {
+    var d = a.detail || {};
+    switch (a.action) {
+      case 'item_add': return d.qty + ' × ' + d.name + ' (' + (d.source === 'order' ? 'طلب' : 'يدوي') + ')';
+      case 'item_void': return d.qty + ' × ' + d.name + ' · السبب: ' + (d.reason || '');
+      case 'deposit': return d.amount + ' جنيه';
+      case 'close': return 'الإجمالي ' + d.total + (d.discount ? ' · خصم ' + d.discount : '') + (d.service ? ' · خدمة ' + d.service : '');
+      case 'controllers': return d.from + ' ← ' + d.to + ' إيد';
+      default: return '';
+    }
+  }
+  function showAudit() {
+    withAuth(function () { return api('/rest/v1/session_audit?select=*&order=id.desc&limit=60'); }).then(function (rows) {
+      var ov = el('div', 'bill-ov'), box = el('div', 'bill-box audit-box');
+      box.appendChild(el('h3', null, 'سجل العمليات'));
+      if (!rows || !rows.length) box.appendChild(el('div', 'muted', 'مفيش عمليات متسجلة'));
+      (rows || []).forEach(function (a) {
+        var row = el('div', 'audit-row');
+        var t = new Date(a.at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+        row.append(el('span', 'a-t', t), el('span', 'a-r', (a.room_name || '') + ' · ' + (AUDIT_AR[a.action] || a.action)),
+          el('span', 'a-d', auditText(a) + (a.actor && a.actor !== 'system' ? ' · ' + a.actor.split('@')[0] : '')));
+        box.appendChild(row);
+      });
+      var ok = el('button', 'btn', 'تم'); ok.onclick = function () { ov.remove(); };
+      box.appendChild(ok); ov.appendChild(box); document.body.appendChild(ov);
+    }).catch(function (e) { toast('فشل تحميل السجل: ' + e.message, true); });
   }
 
   function showShiftReport(title, rep) {

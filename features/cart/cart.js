@@ -6,6 +6,11 @@
   try { cart = JSON.parse(localStorage.getItem('evo-cart2') || '{}'); } catch (e) {}
   var info = { type: 'طاولة', num: '', who: '', note: '' };
   try { info = Object.assign(info, JSON.parse(localStorage.getItem('evo-info') || '{}')); } catch (e) {}
+  // Per-room QR: /?room=CODE preselects the room for the order.
+  try {
+    var qroom = new URLSearchParams(location.search).get('room');
+    if (qroom && /^[0-9A-Za-z\u0600-\u06FF-]{1,10}$/.test(qroom)) { info.type = 'غرفة'; info.num = qroom; localStorage.setItem('evo-info', JSON.stringify(info)); }
+  } catch (e) {}
 
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
   function key(n, p, note) { return n + '|' + p + '|' + (note || ''); }

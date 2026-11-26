@@ -114,3 +114,17 @@ input:focus { outline: 2px solid var(--brand, #f5c800); }
 .bill-row.total { font-weight: 900; color: #f5c800; border-bottom: none; font-size: 16px; }
 .bill-sub { font-weight: 800; margin: 12px 0 4px; color: #cdbfa8; font-size: 13px; }
 .bill-box .btn { width: 100%; margin-top: 14px; }
+
+/* rooms v3: void, QR, audit */
+.r-item.voided span{text-decoration:line-through;opacity:.55}
+.r-item{flex-wrap:wrap}
+.btn.danger{background:#7a1f1f;color:#fff}
+.qr-box{text-align:center}
+.qr-img{width:220px;max-width:70%;margin:10px auto;background:#fff;padding:6px;border-radius:8px}
+.qr-img svg{width:100%;height:auto;display:block}
+.qr-url{font-size:11px;direction:ltr;word-break:break-all;opacity:.8;margin-bottom:6px}
+.audit-box{max-height:80vh;overflow:auto}
+.audit-row{display:grid;grid-template-columns:52px 1fr;gap:2px 8px;padding:6px 0;border-bottom:1px dashed rgba(255,255,255,.12);font-size:13px}
+.audit-row .a-t{opacity:.7}
+.audit-row .a-d{grid-column:2;opacity:.8;font-size:12px}
+@media print{body.print-qr>*:not(.bill-ov){display:none!important}body.print-qr .bill-ov{position:static;background:#fff;color:#000}body.print-qr .bill-box{box-shadow:none;background:#fff;color:#000}body.print-qr .bill-box button{display:none}}
