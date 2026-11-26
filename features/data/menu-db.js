@@ -68,7 +68,7 @@
       var b = document.createElement('button'); b.className = 'nav-tab';
       b.setAttribute('onclick', "showSection('" + c.id + "',this)");
       var ico = document.getElementById('i-' + c.id) ? 'i-' + c.id : 'i-all';
-      b.innerHTML = '<svg class="ico" aria-hidden="true"><use href="#' + ico + '"/></svg>' + esc(c.name_ar);
+      b.innerHTML = '<svg class="ico" aria-hidden="true"><use href="#' + ico + '"/></svg>' + esc(c.nav_ar || c.name_ar);
       tabs.appendChild(b);
     });
     window.__evoMenuDB = true;

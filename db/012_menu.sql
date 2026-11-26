@@ -240,3 +240,21 @@ update public.menu_items m set
   hidden = coalesce((select o.hidden from public.menu_overrides o where o.item_key = m.name || '|' || array_to_string(m.prices,'/')), m.hidden),
   out_of_stock = coalesce((select o.out_of_stock from public.menu_overrides o where o.item_key = m.name || '|' || array_to_string(m.prices,'/')), m.out_of_stock)
 where m.kind in ('item','extra') and m.updated_at > now() - interval '1 minute';
+
+-- short names for the category tabs (the tab label differs from the section heading in the original page)
+alter table public.menu_categories add column if not exists nav_ar text not null default '';
+update public.menu_categories set nav_ar = 'قهوة ساخنة' where id = 'hot-coffee' and nav_ar = '';
+update public.menu_categories set nav_ar = 'إسبريسو' where id = 'espresso' and nav_ar = '';
+update public.menu_categories set nav_ar = 'مشروبات ساخنة' where id = 'hot-drinks' and nav_ar = '';
+update public.menu_categories set nav_ar = 'حليب ساخن' where id = 'hot-milk' and nav_ar = '';
+update public.menu_categories set nav_ar = 'قهوة باردة' where id = 'ice-coffee' and nav_ar = '';
+update public.menu_categories set nav_ar = 'فرابيه' where id = 'frappe' and nav_ar = '';
+update public.menu_categories set nav_ar = 'ماتشا' where id = 'matcha' and nav_ar = '';
+update public.menu_categories set nav_ar = 'عصائر' where id = 'juice' and nav_ar = '';
+update public.menu_categories set nav_ar = 'ميكس صودا' where id = 'soda' and nav_ar = '';
+update public.menu_categories set nav_ar = 'سموزي' where id = 'smoothie' and nav_ar = '';
+update public.menu_categories set nav_ar = 'ميلك شيك' where id = 'milkshake' and nav_ar = '';
+update public.menu_categories set nav_ar = 'وافل' where id = 'waffle' and nav_ar = '';
+update public.menu_categories set nav_ar = 'حلويات' where id = 'desserts' and nav_ar = '';
+update public.menu_categories set nav_ar = 'غازية' where id = 'soft' and nav_ar = '';
+update public.menu_categories set nav_ar = 'زبادي' where id = 'yogurt' and nav_ar = '';

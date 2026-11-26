@@ -239,9 +239,10 @@
       var ch = el('div', 'row');
       var nAr = el('input', 'm-in'); nAr.value = c.name_ar; nAr.setAttribute('aria-label', 'اسم القسم');
       var nEn = el('input', 'm-in'); nEn.value = c.name_en; nEn.dir = 'ltr';
+      var nNav = el('input', 'm-in'); nNav.value = c.nav_ar || ''; nNav.placeholder = 'اسم التبويب (اختياري)';
       var hidL = el('label', 'chk'), hid = el('input'); hid.type = 'checkbox'; hid.checked = !!c.hidden; hidL.append(hid, document.createTextNode('مخفي'));
       var sv = el('button', 'btn small', 'حفظ القسم');
-      sv.onclick = function () { mPatch('menu_categories', c.id, { name_ar: nAr.value.trim() || c.name_ar, name_en: nEn.value.trim(), hidden: hid.checked }).then(function () { toast('اتحفظ القسم'); return mReload(); }).catch(function (e) { toast('فشل: ' + e.message, true); }); };
+      sv.onclick = function () { mPatch('menu_categories', c.id, { name_ar: nAr.value.trim() || c.name_ar, name_en: nEn.value.trim(), nav_ar: nNav.value.trim(), hidden: hid.checked }).then(function () { toast('اتحفظ القسم'); return mReload(); }).catch(function (e) { toast('فشل: ' + e.message, true); }); };
       var up = el('button', 'btn small ghost', '↑'), dn = el('button', 'btn small ghost', '↓');
       up.onclick = function () { if (ci > 0) swapSort('menu_categories', c, m.cats[ci - 1]); }; 
       dn.onclick = function () { if (ci < m.cats.length - 1) swapSort('menu_categories', c, m.cats[ci + 1]); };
@@ -251,7 +252,7 @@
         withAuth(function () { return api('/rest/v1/menu_categories?id=eq.' + encodeURIComponent(c.id), { method: 'DELETE', headers: { prefer: 'return=minimal' } }); })
           .then(function () { toast('اتحذف القسم'); return mReload(); }).catch(function (e) { toast('فشل: ' + e.message, true); });
       };
-      ch.append(nAr, nEn, hidL, sv, up, dn, del); box.appendChild(ch);
+      ch.append(nAr, nNav, nEn, hidL, sv, up, dn, del); box.appendChild(ch);
       var rows = m.items.filter(function (i) { return i.category_id === c.id; });
       rows.forEach(function (it, ri) {
         n++;
