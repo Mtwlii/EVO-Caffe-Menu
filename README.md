@@ -8,6 +8,8 @@ Arabic (RTL) digital menu with WhatsApp ordering for **EVO Cafe**, Mit Ghamr, Eg
 |---|---|---|
 | ![Mobile hero](docs/mobile-hero.png) | ![Menu and cart](docs/mobile-menu-cart.png) | ![Order sheet](docs/mobile-order-sheet.png) |
 
+Item detail, order details and success screen: `docs/mobile-item-detail.png`, `docs/mobile-order-details.png`, `docs/mobile-order-done.png`.
+
 | Featured items | Desktop |
 |---|---|
 | ![Featured](docs/mobile-featured.png) | ![Desktop](docs/desktop.png) |
@@ -18,7 +20,7 @@ Note: the screenshots with the contact bar use sample contact values for the dem
 - 15 categories plus an "All" view (170 items), prices and descriptions in Arabic
 - Sticky category pills with hand-drawn SVG icons, search across all items (ignores Arabic diacritics and أ/ا, ة/ه, ى/ي)
 - "اختيارات ايفو" featured strip and a "مميز" badge, both driven by items marked as highlighted in `index.html`
-- WhatsApp ordering: cart with quantities, required table or room number, optional note, prefilled Arabic message with items and total. Nothing is stored on a server; the cart is kept on the phone
+- WhatsApp ordering in two steps: review the cart (quantity and a note per item), then table or room number (required), optional name and note. A success screen follows. The Arabic message carries items, notes, name and total. Tapping an item opens a detail sheet (size, quantity, note). Nothing is stored on a server; the cart stays on the phone.
 - Contact bar and footer buttons (call, WhatsApp, map, Instagram, Facebook, TikTok) that show only when a value is set in the config
 - Print mode (light, two columns) with a QR code, share preview (Open Graph)
 - Hero with slow background drift and steam animation (off for reduced-motion), no JS libraries, small page
@@ -52,6 +54,7 @@ Open `index.html` in a browser. No install, no build.
 - [x] Single source of prices (two differing prices resolved with the owner: higher price kept)
 - [x] Icons, search, featured items, print mode and QR
 - [x] WhatsApp cart with required table or room number
+- [x] Two-step order flow with success screen, item detail sheet
 - [x] Contact configuration
 
 ## Roadmap (edit freely)
@@ -65,7 +68,8 @@ Near term
 Medium term
 - [ ] English version with a language toggle
 - [ ] Out-of-stock switch per item without editing code
-- [ ] Service charge or notes per item in the order message
+- [x] Notes per item and optional customer name in the order message
+- [ ] Service charge line in the order message
 - [ ] Order counter or kitchen view on a screen in the cafe
 - [ ] Analytics for most viewed and most ordered items
 

@@ -52,3 +52,27 @@ body.sheet-open { overflow: hidden; }
 .item.dual .qty-p { font-size: 16px; color: var(--brand); font-weight: 800; }
 .f-card .qty { justify-content: flex-start; }
 .cart-bar[hidden], .place-err[hidden], #qEmpty[hidden] { display: none !important; }
+
+/* round 5: detail sheet, steps, notes, success, toast */
+.tap { cursor: pointer; }
+.sheet-head { gap: 8px; }
+.sheet-head strong { flex: 1; font-size: 20px; }
+.sheet-back-btn { background: none; border: 0; color: var(--text-soft); font-size: 24px; width: 40px; height: 40px; cursor: pointer; }
+.d-desc { color: var(--text-soft); font-size: 15px; line-height: 1.6; }
+.d-row { display: flex; justify-content: space-between; align-items: center; }
+.d-lbl { font-weight: 700; color: var(--text-soft); }
+.d-price { font-size: 22px; font-weight: 900; color: var(--brand); }
+.d-prices { display: flex; gap: 8px; }
+.chip { flex: 1; font: 800 16px var(--font); color: var(--text); background: var(--bg); border: 1px solid var(--line-strong); border-radius: 12px; padding: 12px; cursor: pointer; }
+.chip.on { background: var(--brand); color: #1b1405; border-color: var(--brand); }
+.line { display: flex; flex-direction: column; gap: 6px; padding: 10px 0; border-bottom: 1px dashed var(--line); }
+.line .line-top { display: flex; align-items: center; gap: 10px; }
+.line .l-note { padding: 8px 12px; font-size: 14px; }
+.done-mark { width: 64px; height: 64px; border-radius: 50%; background: var(--brand); color: #1b1405; display: grid; place-items: center; margin: 6px auto 0; }
+.done-mark .ico { width: 34px; height: 34px; stroke-width: 2.4; }
+.done-t { text-align: center; font-size: 19px; font-weight: 800; line-height: 1.5; }
+.done-s { text-align: center; color: var(--text-soft); font-size: 15px; }
+.clear.strong { color: var(--text); font-weight: 800; }
+.toast { position: fixed; z-index: 300; inset-inline: 0; margin: 0 auto; width: max-content; max-width: 90%; bottom: 150px; background: var(--surface-2); color: var(--text); border: 1px solid var(--line-strong); border-radius: 999px; padding: 10px 18px; font-weight: 700; font-size: 15px; box-shadow: 0 6px 20px rgba(0,0,0,.5); }
+.toast[hidden] { display: none; }
+@media print { .toast { display: none !important; } }

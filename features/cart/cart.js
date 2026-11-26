@@ -2,23 +2,29 @@
   var WA = ((window.EVO_CONTACT || {}).whatsapp || '').replace(/\D/g, '');
   if (!WA) return; // ordering needs a WhatsApp number in contact.config.js
   var CUR = 'جنيه';
-  var cart = {}; // key -> {name, price, qty}
-  try { cart = JSON.parse(localStorage.getItem('evo-cart') || '{}'); } catch (e) {}
-  var place = { type: 'طاولة', num: '', note: '' };
-  try { place = Object.assign(place, JSON.parse(localStorage.getItem('evo-place') || '{}')); } catch (e) {}
+  var cart = {}; // key -> {name, price, note, qty}
+  try { cart = JSON.parse(localStorage.getItem('evo-cart2') || '{}'); } catch (e) {}
+  var info = { type: 'طاولة', num: '', who: '', note: '' };
+  try { info = Object.assign(info, JSON.parse(localStorage.getItem('evo-info') || '{}')); } catch (e) {}
 
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
-  function key(n, p) { return n + '|' + p; }
-  function save() { try { localStorage.setItem('evo-cart', JSON.stringify(cart)); localStorage.setItem('evo-place', JSON.stringify(place)); } catch (e) {} }
+  function key(n, p, note) { return n + '|' + p + '|' + (note || ''); }
+  function save() { try { localStorage.setItem('evo-cart2', JSON.stringify(cart)); localStorage.setItem('evo-info', JSON.stringify(info)); } catch (e) {} }
   function count() { return Object.keys(cart).reduce(function (a, k) { return a + cart[k].qty; }, 0); }
   function total() { return Object.keys(cart).reduce(function (a, k) { return a + cart[k].qty * cart[k].price; }, 0); }
-  function change(name, price, d) {
-    var k = key(name, price), l = cart[k] || (cart[k] = { name: name, price: price, qty: 0 });
+  function qtyOf(name, price) { return Object.keys(cart).reduce(function (a, k) { var l = cart[k]; return a + (l.name === name && l.price === price ? l.qty : 0); }, 0); }
+  function add(name, price, d, note) {
+    note = (note || '').trim();
+    var k = key(name, price, note), l = cart[k] || (cart[k] = { name: name, price: price, note: note, qty: 0 });
     l.qty += d; if (l.qty <= 0) delete cart[k];
     save(); refresh();
   }
+  function quickMinus(name, price) { // remove one from the most recent line of this item
+    var ks = Object.keys(cart).filter(function (k) { return cart[k].name === name && cart[k].price === price; });
+    if (ks.length) add(name, price, -1, cart[ks[ks.length - 1]].note);
+  }
 
-  // Controls on every menu item (works for the All view and featured clones too)
+  // ---------- controls on every menu item ----------
   function decorate() {
     document.querySelectorAll('.item, .extra-pill, .f-card').forEach(function (it) {
       if (it.querySelector('.qty')) return;
@@ -27,6 +33,7 @@
       if (!priceEl) return;
       var nums = (priceEl.textContent.match(/\d+/g) || []).map(Number);
       if (!nums.length) return;
+      var descEl = it.querySelector('.item-desc'), desc = descEl ? descEl.textContent.trim() : '';
       var box = el('div', 'qty'); box.dataset.name = name;
       nums.forEach(function (p) {
         var c = el('div', 'qty-c'); c.dataset.price = p;
@@ -34,83 +41,160 @@
         var minus = el('button', 'q-btn q-minus', '−'); minus.setAttribute('aria-label', 'إنقاص');
         var n = el('span', 'q-n', '0');
         var plus = el('button', 'q-btn q-plus', '+'); plus.setAttribute('aria-label', 'إضافة ' + name);
-        minus.onclick = function () { change(name, p, -1); };
-        plus.onclick = function () { change(name, p, 1); };
+        minus.onclick = function (e) { e.stopPropagation(); quickMinus(name, p); };
+        plus.onclick = function (e) { e.stopPropagation(); add(name, p, 1); };
         c.append(minus, n, plus); box.appendChild(c);
       });
       if (nums.length > 1) it.classList.add('dual');
       it.appendChild(box);
+      var open = it.querySelector('.item-left') || nameEl || it.firstElementChild;
+      if (open) { open.classList.add('tap'); open.onclick = function () { openDetail(name, nums, desc); }; }
     });
   }
 
-  // UI shell
-  var bar = el('button', 'cart-bar'); bar.hidden = true;
+  // ---------- sheet ----------
   var sheet = el('div', 'sheet'); sheet.hidden = true;
-  sheet.innerHTML = '<div class="sheet-back"></div><div class="sheet-body" role="dialog" aria-label="طلبك">' +
-    '<div class="sheet-head"><strong>طلبك</strong><button class="sheet-x" aria-label="إغلاق">×</button></div>' +
-    '<div class="sheet-lines"></div>' +
-    '<div class="sheet-total"><span>الإجمالي</span><span class="t-val"></span></div>' +
-    '<div class="place"><div class="seg"><button data-t="طاولة">طاولة</button><button data-t="غرفة">غرفة</button></div>' +
-    '<input id="placeNum" inputmode="numeric" autocomplete="off" placeholder="رقم الطاولة (مطلوب)" aria-label="رقم الطاولة أو الغرفة"></div>' +
-    '<div class="place-err" hidden>اكتب رقم الطاولة أو الغرفة الأول</div>' +
-    '<input id="orderNote" placeholder="ملاحظات (اختياري)" aria-label="ملاحظات">' +
-    '<button class="send" disabled>أرسل الطلب على واتساب</button>' +
-    '<button class="clear">مسح الطلب</button></div>';
-  document.body.append(bar, sheet);
-  var $ = function (s) { return sheet.querySelector(s); };
-  var num = $('#placeNum'), note = $('#orderNote'), send = $('.send'), err = $('.place-err');
+  var back = el('div', 'sheet-back'), body = el('div', 'sheet-body');
+  body.setAttribute('role', 'dialog'); body.setAttribute('aria-modal', 'true');
+  sheet.append(back, body); document.body.appendChild(sheet);
+  var bar = el('button', 'cart-bar'); bar.hidden = true; document.body.appendChild(bar);
 
-  function valid() { return num.value.trim().length > 0; }
+  function head(title, onBack) {
+    var h = el('div', 'sheet-head');
+    if (onBack) { var b = el('button', 'sheet-back-btn', '→'); b.setAttribute('aria-label', 'رجوع'); b.onclick = onBack; h.appendChild(b); }
+    h.appendChild(el('strong', null, title));
+    var x = el('button', 'sheet-x', '×'); x.setAttribute('aria-label', 'إغلاق'); x.onclick = closeSheet; h.appendChild(x);
+    return h;
+  }
+  function show(nodes) { body.textContent = ''; nodes.forEach(function (n) { body.appendChild(n); }); sheet.hidden = false; document.body.classList.add('sheet-open'); body.scrollTop = 0; }
+  function closeSheet() { sheet.hidden = true; document.body.classList.remove('sheet-open'); }
+  back.onclick = closeSheet;
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !sheet.hidden) closeSheet(); });
+
+  // D: item detail
+  function openDetail(name, prices, desc) {
+    var state = { p: prices[0], q: 1 };
+    var nodes = [head(name)];
+    if (desc) nodes.push(el('div', 'd-desc', desc));
+    var sizes = el('div', 'd-prices');
+    function price() { return el('div', 'd-price', state.p + ' ' + CUR); }
+    var priceBox = el('div', 'd-row');
+    priceBox.append(el('span', 'd-lbl', 'السعر'), price());
+    nodes.push(priceBox);
+    if (prices.length > 1) {
+      prices.forEach(function (p) {
+        var b = el('button', 'chip' + (p === state.p ? ' on' : ''), p + ' ' + CUR);
+        b.onclick = function () { state.p = p; sizes.querySelectorAll('.chip').forEach(function (c) { c.classList.toggle('on', c === b); }); upd(); };
+        sizes.appendChild(b);
+      });
+      nodes.push(sizes);
+    }
+    var q = el('div', 'd-row'), st = el('div', 'stepper'), qn = el('span', 'q-n on', '1');
+    var m = el('button', 'q-btn', '−'), pl = el('button', 'q-btn', '+');
+    m.onclick = function () { if (state.q > 1) { state.q--; upd(); } }; pl.onclick = function () { state.q++; upd(); };
+    st.append(pl, qn, m); q.append(el('span', 'd-lbl', 'الكمية'), st); nodes.push(q);
+    var note = el('input'); note.placeholder = 'ملاحظة على الصنف (اختياري) مثال: بدون سكر'; note.setAttribute('aria-label', 'ملاحظة على الصنف'); note.maxLength = 80;
+    nodes.push(note);
+    var go = el('button', 'send'); nodes.push(go);
+    function upd() { qn.textContent = state.q; go.textContent = 'أضف إلى الطلب · ' + state.q * state.p + ' ' + CUR; }
+    go.onclick = function () { add(name, state.p, state.q, note.value); closeSheet(); toast('تمت إضافة ' + name); };
+    upd(); show(nodes);
+  }
+
+  // Step 1: cart
+  function openCart() {
+    if (!count()) return;
+    var nodes = [head('طلبك')], L = el('div', 'sheet-lines');
+    Object.keys(cart).forEach(function (k) {
+      var l = cart[k], row = el('div', 'line'), top = el('div', 'line-top');
+      var inf = el('div', 'l-info'); inf.append(el('div', 'l-name', l.name), el('div', 'l-sub', l.price + ' ' + CUR));
+      var st = el('div', 'stepper'), m = el('button', 'q-btn', '−'), p = el('button', 'q-btn', '+');
+      m.onclick = function () { add(l.name, l.price, -1, l.note); if (count()) openCart(); }; p.onclick = function () { add(l.name, l.price, 1, l.note); openCart(); };
+      st.append(p, el('span', 'q-n on', l.qty), m);
+      top.append(inf, st, el('div', 'l-sum', l.qty * l.price));
+      var n = el('input', 'l-note'); n.placeholder = 'ملاحظة على الصنف'; n.value = l.note; n.maxLength = 80; n.setAttribute('aria-label', 'ملاحظة على ' + l.name);
+      n.onchange = function () { // re-key the line with the new note
+        var nn = n.value.trim(); if (nn === l.note) return;
+        delete cart[k]; var k2 = key(l.name, l.price, nn);
+        if (cart[k2]) cart[k2].qty += l.qty; else cart[k2] = { name: l.name, price: l.price, note: nn, qty: l.qty };
+        save(); refresh(); openCart();
+      };
+      row.append(top, n); L.appendChild(row);
+    });
+    nodes.push(L);
+    var tot = el('div', 'sheet-total'); tot.append(el('span', null, 'الإجمالي'), el('span', 't-val', total() + ' ' + CUR)); nodes.push(tot);
+    var next = el('button', 'send', 'متابعة'); next.onclick = openDetails; nodes.push(next);
+    var clr = el('button', 'clear', 'مسح الطلب'); clr.onclick = function () { cart = {}; save(); refresh(); closeSheet(); }; nodes.push(clr);
+    show(nodes);
+  }
+
+  // Step 2: where + send
+  function message() {
+    var lines = ['طلب جديد من منيو EVO', info.type + ' رقم: ' + info.num.trim()];
+    if (info.who.trim()) lines.push('الاسم: ' + info.who.trim());
+    lines.push('');
+    Object.keys(cart).forEach(function (k) {
+      var l = cart[k]; lines.push(l.qty + ' × ' + l.name + ' (' + l.price + ') = ' + l.qty * l.price);
+      if (l.note) lines.push('   ملاحظة: ' + l.note);
+    });
+    lines.push('', 'الإجمالي: ' + total() + ' ' + CUR);
+    if (info.note.trim()) lines.push('ملاحظات: ' + info.note.trim());
+    return lines.join('\n');
+  }
+  window.__evoOrderUrl = function () { return 'https://wa.me/' + WA + '?text=' + encodeURIComponent(message()); };
+
+  function openDetails() {
+    var nodes = [head('بيانات الطلب', openCart)];
+    var seg = el('div', 'seg'), num = el('input'), err = el('div', 'place-err', 'اكتب رقم الطاولة أو الغرفة الأول'), send = el('button', 'send', 'أرسل الطلب على واتساب');
+    err.hidden = true; num.id = 'placeNum'; num.inputMode = 'numeric'; num.autocomplete = 'off'; num.value = info.num;
+    ['طاولة', 'غرفة'].forEach(function (t) {
+      var b = el('button', info.type === t ? 'on' : '', t); b.onclick = function () { info.type = t; save(); seg.querySelectorAll('button').forEach(function (x) { x.classList.toggle('on', x === b); }); num.placeholder = 'رقم ' + t + ' (مطلوب)'; };
+      seg.appendChild(b);
+    });
+    num.placeholder = 'رقم ' + info.type + ' (مطلوب)'; num.setAttribute('aria-label', 'رقم الطاولة أو الغرفة');
+    var place = el('div', 'place'); place.append(seg, num);
+    var who = el('input'); who.id = 'who'; who.placeholder = 'الاسم (اختياري)'; who.value = info.who; who.maxLength = 40; who.setAttribute('aria-label', 'الاسم');
+    var note = el('input'); note.id = 'orderNote'; note.placeholder = 'ملاحظات على الطلب (اختياري)'; note.value = info.note; note.maxLength = 120; note.setAttribute('aria-label', 'ملاحظات');
+    var sum = el('div', 'sheet-total'); sum.append(el('span', null, count() + ' صنف'), el('span', 't-val', total() + ' ' + CUR));
+    function ok() { return num.value.trim().length > 0; }
+    function sync() { send.disabled = !ok(); }
+    num.oninput = function () { info.num = num.value; save(); err.hidden = true; sync(); };
+    who.oninput = function () { info.who = who.value; save(); }; note.oninput = function () { info.note = note.value; save(); };
+    send.onclick = function () {
+      if (!ok()) { err.hidden = false; num.focus(); return; }
+      window.open(window.__evoOrderUrl(), '_blank', 'noopener');
+      openDone();
+    };
+    nodes.push(sum, place, err, who, note, send); sync(); show(nodes);
+  }
+
+  // Success screen
+  function openDone() {
+    var nodes = [head('جهزنا طلبك')];
+    var ok = el('div', 'done-mark'); ok.innerHTML = '<svg class="ico" viewBox="0 0 24 24"><path d="M5 12.500l4.500 4.500L19 7.500"/></svg>';
+    nodes.push(ok);
+    nodes.push(el('div', 'done-t', 'اضغط "إرسال" في واتساب عشان الطلب يوصل للكافيه'));
+    nodes.push(el('div', 'done-s', info.type + ' رقم ' + info.num.trim() + ' · ' + count() + ' صنف · ' + total() + ' ' + CUR));
+    var again = el('button', 'send', 'فتح واتساب تاني'); again.onclick = function () { window.open(window.__evoOrderUrl(), '_blank', 'noopener'); }; nodes.push(again);
+    var fin = el('button', 'clear strong', 'تم الإرسال، طلب جديد'); fin.onclick = function () { cart = {}; info.note = ''; save(); refresh(); closeSheet(); toast('الطلب اتمسح، تقدر تطلب تاني'); }; nodes.push(fin);
+    var keep = el('button', 'clear', 'رجوع للمنيو (الطلب يفضل محفوظ)'); keep.onclick = closeSheet; nodes.push(keep);
+    show(nodes);
+  }
+
+  // toast
+  var tm, tEl = el('div', 'toast'); tEl.hidden = true; document.body.appendChild(tEl);
+  function toast(t) { tEl.textContent = t; tEl.hidden = false; clearTimeout(tm); tm = setTimeout(function () { tEl.hidden = true; }, 1800); }
+
   function refresh() {
     document.querySelectorAll('.qty-c').forEach(function (c) {
-      var k = key(c.parentNode.dataset.name, c.dataset.price), q = cart[k] ? cart[k].qty : 0;
-      c.querySelector('.q-n').textContent = q;
-      c.classList.toggle('on', q > 0);
+      var q = qtyOf(c.parentNode.dataset.name, Number(c.dataset.price));
+      c.querySelector('.q-n').textContent = q; c.classList.toggle('on', q > 0);
     });
     var n = count();
     bar.hidden = !n; document.body.classList.toggle('has-cart', n > 0);
     bar.innerHTML = '<span class="cb-n">' + n + '</span><span>عرض الطلب</span><span class="cb-t">' + total() + ' ' + CUR + '</span>';
-    var L = $('.sheet-lines'); L.textContent = '';
-    Object.keys(cart).forEach(function (k) {
-      var l = cart[k], row = el('div', 'line');
-      var info = el('div', 'l-info'); info.append(el('div', 'l-name', l.name), el('div', 'l-sub', l.price + ' ' + CUR));
-      var st = el('div', 'stepper');
-      var m = el('button', 'q-btn', '−'), p = el('button', 'q-btn', '+');
-      m.onclick = function () { change(l.name, l.price, -1); }; p.onclick = function () { change(l.name, l.price, 1); };
-      st.append(m, el('span', 'q-n on', l.qty), p);
-      row.append(info, st, el('div', 'l-sum', l.qty * l.price)); L.appendChild(row);
-    });
-    $('.t-val').textContent = total() + ' ' + CUR;
-    send.disabled = !n || !valid();
-    if (!n && !sheet.hidden) closeSheet();
+    if (!n && !sheet.hidden && body.querySelector('.sheet-lines')) closeSheet();
   }
-  function setType(t) {
-    place.type = t; save();
-    sheet.querySelectorAll('.seg button').forEach(function (b) { b.classList.toggle('on', b.dataset.t === t); });
-    num.placeholder = 'رقم ' + t + ' (مطلوب)';
-  }
-  function openSheet() { sheet.hidden = false; document.body.classList.add('sheet-open'); num.value = place.num; note.value = place.note; setType(place.type); refresh(); }
-  function closeSheet() { sheet.hidden = true; document.body.classList.remove('sheet-open'); }
-  bar.onclick = openSheet;
-  $('.sheet-x').onclick = closeSheet; $('.sheet-back').onclick = closeSheet;
-  sheet.querySelectorAll('.seg button').forEach(function (b) { b.onclick = function () { setType(b.dataset.t); }; });
-  num.oninput = function () { place.num = num.value; save(); err.hidden = true; send.disabled = !count() || !valid(); };
-  note.oninput = function () { place.note = note.value; save(); };
-  $('.clear').onclick = function () { cart = {}; save(); refresh(); };
-
-  function message() {
-    var lines = ['طلب جديد من منيو EVO', place.type + ' رقم: ' + num.value.trim(), ''];
-    Object.keys(cart).forEach(function (k) { var l = cart[k]; lines.push(l.qty + ' × ' + l.name + ' (' + l.price + ') = ' + l.qty * l.price); });
-    lines.push('', 'الإجمالي: ' + total() + ' ' + CUR);
-    if (note.value.trim()) lines.push('ملاحظات: ' + note.value.trim());
-    return lines.join('\n');
-  }
-  window.__evoOrderUrl = function () { return 'https://wa.me/' + WA + '?text=' + encodeURIComponent(message()); };
-  send.onclick = function () {
-    if (!valid()) { err.hidden = false; num.focus(); return; }
-    if (!count()) return;
-    window.open(window.__evoOrderUrl(), '_blank', 'noopener');
-  };
-
+  bar.onclick = openCart;
   decorate(); refresh();
 })();
