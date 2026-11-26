@@ -537,10 +537,10 @@
                   var lines = [['الوقت (' + rep.minutes + ' دقيقة)', rep.time_amount + ' جنيه']];
                   if (rcSegs.length > 1) rcSegs.forEach(function (g) {
                     var m = Math.round(((g.ended_at ? new Date(g.ended_at).getTime() : now) - new Date(g.started_at).getTime()) / 60000);
-                    lines.push(['   ' + g.controllers + ' إيد · ' + m + ' د', '', 'sub']);
+                    if (m > 0) lines.push(['   ' + g.controllers + ' إيد · ' + m + ' د', '', 'sub']);
                   });
                   rcItems.forEach(function (x) { lines.push([x.qty + ' × ' + x.name, (x.qty * x.price) + ' جنيه']); });
-                  var totals = [['الوقت', rep.time_amount + ' جنيه'], ['الأصناف', rep.items_amount + ' جنيه']];
+                  var totals = (rep.discount_amount || rep.service_amount) ? [['المجموع', (rep.time_amount + rep.items_amount) + ' جنيه']] : [];
                   if (rep.discount_amount) totals.push(['الخصم', '− ' + rep.discount_amount + ' جنيه']);
                   if (rep.service_amount) totals.push(['الخدمة', '+ ' + rep.service_amount + ' جنيه']);
                   totals.push(['الإجمالي', rep.total + ' جنيه', 'total']);
