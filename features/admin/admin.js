@@ -128,7 +128,8 @@
     else {
       var p = c.p, rooms = p[0] || [], open = p[1] || [], segs = p[5] || [], items = p[6] || [];
       lines.push(['آخر تحديث', stamp(new Date(c.t)), 'sub']);
-      open.forEach(function (ses) {
+      var queued = getQ().map(function (x) { return x.body.p_session_id; });
+      open.filter(function (x) { return queued.indexOf(x.id) < 0; }).forEach(function (ses) {
         var r = rooms.find(function (x) { return x.id === ses.room_id; }) || { name: '?' };
         var ss = segs.filter(function (g) { return g.session_id === ses.id; }), its = items.filter(function (x) { return x.session_id === ses.id && !x.voided_at; });
         var ms = ss.reduce(function (a, g) { return a + (g.ended_at ? new Date(g.ended_at).getTime() : Date.now()) - new Date(g.started_at).getTime(); }, 0);
