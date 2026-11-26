@@ -51,3 +51,4 @@ body.sheet-open { overflow: hidden; }
 .item.dual .qty-c { background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 3px 4px 3px 10px; }
 .item.dual .qty-p { font-size: 16px; color: var(--brand); font-weight: 800; }
 .f-card .qty { justify-content: flex-start; }
+.cart-bar[hidden], .place-err[hidden], #qEmpty[hidden] { display: none !important; }
