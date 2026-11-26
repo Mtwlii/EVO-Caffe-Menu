@@ -39,7 +39,7 @@ Open a shift, start/close a room, make a takeaway sale, print a receipt and a sh
 ```
 SUPABASE_URL=... SUPABASE_ANON_KEY=... BACKUP_EMAIL=... BACKUP_PASSWORD=... node scripts/backup.js /path/to/backups
 ```
-or set the 4 secrets in a PRIVATE GitHub repo; `.github/workflows/backup.yml` then runs daily and keeps artifacts 30 days. The admin Reports tab also has a manual "full backup" button. Supabase free tier has no point-in-time backup, so test a restore once.
+or set the 4 secrets in a PRIVATE GitHub repo; copy `docs/backup-workflow.yml` to `.github/workflows/backup.yml` (the deploy token here has no workflow scope) and it runs daily, keeping artifacts 30 days. The admin Reports tab also has a manual "full backup" button. Supabase free tier has no point-in-time backup, so test a restore once.
 
 ## Printing
 - Receipts, takeaway slips and shift reports print through the browser print dialog at 80mm; set `receipt width` to 58 in Settings for 58mm paper.

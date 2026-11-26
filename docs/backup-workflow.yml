@@ -1,3 +1,4 @@
+# Copy to .github/workflows/backup.yml in the client repo.
 # Daily backup. OFF until you add the 4 repository secrets below (Settings > Secrets > Actions).
 # Secrets: SUPABASE_URL, SUPABASE_ANON_KEY, BACKUP_EMAIL, BACKUP_PASSWORD.
 # The JSON is uploaded as a private workflow artifact (kept 30 days). Use a PRIVATE repo: backups hold sales data.
