@@ -139,7 +139,8 @@ input:focus { outline: 2px solid var(--brand, #f5c800); }
 .rc-total{font-weight:800;font-size:15px}
 .rc-sep{border-top:1px dashed #000;margin:6px 0}
 .rc-thanks{text-align:center;margin-top:6px}
-@page{size:80mm auto;margin:0}
+@page{margin:0}
+@media print{html,body{background:#fff!important}}
 @media print{
   body.print-receipt>*:not(.bill-ov),body.print-qr>*:not(.bill-ov){display:none!important}
   body.print-receipt .bill-ov,body.print-qr .bill-ov{position:static;background:#fff;padding:0;display:block}
