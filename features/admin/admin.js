@@ -18,11 +18,11 @@
     CFG = { brand: Object.assign({}, DEFAULTS.brand, v.brand), theme: Object.assign({}, v.theme), dir: v.dir === 'ltr' ? 'ltr' : 'rtl',
       currency: v.currency || DEFAULTS.currency, receipt: Object.assign({}, DEFAULTS.receipt, v.receipt),
       room_types: (v.room_types && v.room_types.length) ? v.room_types : DEFAULTS.room_types,
-      shifts: v.shifts || [], labels: v.labels || '', reprice: v.reprice_elapsed !== false, tiers: Object.assign({ '2': 'فردي', '4': 'زوجي' }, v.tiers), perms: Object.assign({}, v.cashier_perms) };
+      shifts: v.shifts || [], labels: v.labels || '', reprice: v.reprice_elapsed !== false, expenseCap: v.expense_cap != null ? Number(v.expense_cap) : 500, tiers: Object.assign({ '2': 'فردي', '4': 'زوجي' }, v.tiers), perms: Object.assign({}, v.cashier_perms) };
   }
   var PERMS = [['start', 'بدء جلسة'], ['pause', 'إيقاف مؤقت / استكمال'], ['tier', 'تحويل فردي/زوجي'], ['vip', 'تفعيل/إلغاء VIP'], ['void', 'إلغاء صنف (بسبب)'],
-    ['add_items', 'إضافة أصناف للجلسة'], ['deposit', 'تسجيل مقدم'], ['carry_over', 'نقل للوردية الجاية'], ['close', 'إنهاء وتحصيل الجلسة'], ['shift', 'فتح/قفل الوردية']];
-  function can(p) { return ROLE === 'admin' || (CFG.perms || {})[p] !== false; }
+    ['add_items', 'إضافة أصناف للجلسة'], ['deposit', 'تسجيل مقدم'], ['carry_over', 'نقل للوردية الجاية'], ['close', 'إنهاء وتحصيل الجلسة'], ['shift', 'فتح/قفل الوردية'], ['attendance', 'تسجيل حضور/انصراف'], ['expense', 'تسجيل مصروف'], ['advance', 'تسجيل سلفة (افتراضي: مقفول)']];
+  function can(p) { return ROLE === 'admin' || (p === 'advance' ? (CFG.perms || {})[p] === true : (CFG.perms || {})[p] !== false); }
   function gate(node, p) { if (!can(p)) { node.disabled = true; node.title = 'الأدمن قفل الصلاحية دي'; node.classList.add('perm-off'); } return node; }
   function typeLabel(id) { var t = CFG.room_types.find(function (x) { return x.id === id; }); return t ? t.label : id; }
   function tierLabel(c) { return (CFG.tiers && CFG.tiers[c]) || String(c); }
@@ -852,6 +852,14 @@
       ['مقدمات استلمتها الوردية', (rep.deposits_received || 0) + ' جنيه'],
       ['باقي الفواتير المتقفلة', (rep.collected_at_close != null ? rep.collected_at_close : rep.total) + ' جنيه']
     ];
+    if (rep.expenses != null) {
+      lines.push(['مصروفات الوردية', '− ' + rep.expenses + ' جنيه']);
+      (rep.expenses_list || []).forEach(function (x, i) {
+        if (!i) lines.push(['تفاصيل المصروفات:', '', 'sub']);
+        lines.push([x.reason + ' · ' + String(x.by || '').split('@')[0], '− ' + x.amount + ' جنيه']);
+      });
+      lines.push(['النقدية المتوقعة في الدرج', rep.expected_cash + ' جنيه', 'total']);
+    }
     (rep.handed_over || []).forEach(function (h, i) {
       if (!i) lines.push(['جلسات اتنقلت للوردية الجاية:', '', 'sub']);
       lines.push([h.room + ' · ' + h.minutes + ' دقيقة · ' + tierLabel(h.controllers || 2), 'متراكم ' + h.subtotal + ' جنيه']);
@@ -898,7 +906,7 @@
     }).catch(function (e) { toast('فشل تحميل الطلبات: ' + e.message, true); });
   }
   function pick(tab) {
-    ['Menu', 'Rooms', 'Orders', 'Staff', 'Settings'].forEach(function (n) {
+    ['Menu', 'Rooms', 'Orders', 'Ops', 'Staff', 'Settings'].forEach(function (n) {
       $('tab' + n).classList.toggle('on', n === tab); $((n.toLowerCase()) + 'Tab').hidden = n !== tab;
     });
     clearTimers();
@@ -906,12 +914,180 @@
   $('tabMenu').onclick = function () { pick('Menu'); };
   $('tabSettings').onclick = function () { pick('Settings'); bootSettings(); };
   $('tabStaff').onclick = function () { pick('Staff'); bootStaff(); };
+  $('tabOps').onclick = function () { pick('Ops'); bootOps(); };
   $('tabRooms').onclick = function () {
     pick('Rooms'); bootRooms();
   };
   $('tabOrders').onclick = function () {
     pick('Orders'); bootOrders();
   };
+
+
+  // ---------- attendance, petty expenses, salary advances ----------
+  function myEmail() { try { var t = JSON.parse(localStorage.getItem('evo-admin-session')).access_token; return JSON.parse(atob(t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).email; } catch (e) { return ''; } }
+  function who(e) { return String(e || '').replace(/@staff\.evo\.invalid$/, '').replace(/@.*$/, ''); }
+  function fmtT(d) { return d ? new Date(d).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : '—'; }
+  function dayKey(d) { var x = new Date(d); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); }
+  function localInput(d) { if (!d) return ''; var x = new Date(d); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); return x.toISOString().slice(0, 16); }
+  function csvDown(name, rows) {
+    var t = '\ufeff' + rows.map(function (r) { return r.map(function (c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([t], { type: 'text/csv' })); a.download = name; a.click();
+  }
+  function monthRange(v) { var p = v.split('-'), a = new Date(Number(p[0]), Number(p[1]) - 1, 1), b = new Date(Number(p[0]), Number(p[1]), 1); return [a.toISOString(), b.toISOString()]; }
+  function sec(host, title) { var b = el('div', 'room ops-sec'); b.appendChild(el('div', 'r-title', title)); host.appendChild(b); return b; }
+  function bootOps() {
+    var host = $('opsTab'); host.textContent = '';
+    var admin = ROLE === 'admin', me = myEmail();
+    var mi = el('input', 'mini-in'); mi.type = 'month'; mi.value = dayKey(new Date()).slice(0, 7);
+    var top = el('div', 'row'); top.append(el('div', 'cur', 'الشهر'), mi); 
+    if (admin) host.appendChild(top);
+    var secA = sec(host, 'الحضور والانصراف'), secE = sec(host, 'مصروفات الوردية'), secV = sec(host, 'السلف');
+    var run = function () { loadAtt(); loadExp(); loadAdv(); };
+    mi.onchange = run;
+
+    // ----- attendance
+    function loadAtt() {
+      secA.querySelectorAll('.ops-body').forEach(function (n) { n.remove(); });
+      var body = el('div', 'ops-body'); secA.appendChild(body);
+      var rg = monthRange(mi.value);
+      var q = '/rest/v1/attendance?select=*&order=check_in.desc&limit=2000' + (admin ? '&check_in=gte.' + encodeURIComponent(rg[0]) + '&check_in=lt.' + encodeURIComponent(rg[1]) : '&limit=60');
+      rpcGet(q).then(function (rows) {
+        rows = rows || [];
+        var mine = rows.find(function (r) { return r.staff_email === me && !r.check_out; });
+        var st = el('div', 'cur', mine ? 'انت حاضر من ' + fmtT(mine.check_in) : 'انت مش مسجل حضور');
+        var bIn = el('button', 'btn small', 'تسجيل حضور'), bOut = el('button', 'btn small warn', 'تسجيل انصراف');
+        gate(bIn, 'attendance'); gate(bOut, 'attendance');
+        if (mine) bIn.disabled = true; else bOut.disabled = true;
+        bIn.onclick = function () { bIn.disabled = true; rpc('check_in').then(function () { toast('اتسجل حضورك'); bootOps(); }).catch(function (e) { toast('فشل: ' + e.message, true); bIn.disabled = false; }); };
+        bOut.onclick = function () { bOut.disabled = true; rpc('check_out').then(function () { toast('اتسجل انصرافك'); bootOps(); }).catch(function (e) { toast('فشل: ' + e.message, true); bOut.disabled = false; }); };
+        var bar = el('div', 'row'); bar.append(st, bIn, bOut); body.appendChild(bar);
+        if (!admin) {
+          rows.slice(0, 10).forEach(function (r) { body.appendChild(el('div', 'cur', dayKey(r.check_in) + ' · ' + fmtT(r.check_in) + ' → ' + fmtT(r.check_out))); });
+          return;
+        }
+        var by = {}; rows.forEach(function (r) { (by[r.staff_email] = by[r.staff_email] || []).push(r); });
+        var csv = [['الموظف', 'اليوم', 'حضور', 'انصراف', 'ساعات']];
+        Object.keys(by).sort().forEach(function (em) {
+          var days = {}, tot = 0;
+          by[em].forEach(function (r) {
+            var h = r.check_out ? (new Date(r.check_out) - new Date(r.check_in)) / 3600000 : 0; tot += h;
+            days[dayKey(r.check_in)] = (days[dayKey(r.check_in)] || 0) + h;
+            csv.push([who(em), dayKey(r.check_in), fmtT(r.check_in), r.check_out ? fmtT(r.check_out) : '', h.toFixed(2)]);
+          });
+          var box = el('div', 'ops-emp'); box.appendChild(el('div', 'name', who(em) + ' · ' + Object.keys(days).length + ' يوم · ' + tot.toFixed(1) + ' ساعة في الشهر'));
+          by[em].forEach(function (r) {
+            var row = el('div', 'row ops-rec');
+            var h = r.check_out ? ((new Date(r.check_out) - new Date(r.check_in)) / 3600000).toFixed(1) + ' س' : 'لسه موجود';
+            row.appendChild(el('div', 'cur', dayKey(r.check_in) + ' · ' + h + (r.edited_by ? ' · معدّل' : '')));
+            var i1 = el('input', 'mini-in'); i1.type = 'datetime-local'; i1.value = localInput(r.check_in);
+            var i2 = el('input', 'mini-in'); i2.type = 'datetime-local'; i2.value = localInput(r.check_out);
+            var sv = el('button', 'btn small ghost', 'حفظ التعديل');
+            sv.onclick = function () { rpc('attendance_set', { p_id: r.id, p_email: null, p_in: new Date(i1.value).toISOString(), p_out: i2.value ? new Date(i2.value).toISOString() : null, p_note: null })
+              .then(function () { toast('اتعدل'); loadAtt(); }).catch(function (e) { toast('فشل: ' + e.message, true); }); };
+            row.append(i1, i2, sv); box.appendChild(row);
+          });
+          body.appendChild(box);
+        });
+        if (!rows.length) body.appendChild(el('div', 'muted', 'مفيش تسجيلات الشهر ده'));
+        var ex = el('button', 'btn small ghost', 'تصدير CSV'); ex.onclick = function () { csvDown('attendance-' + mi.value + '.csv', csv); }; body.appendChild(ex);
+        // manual add
+        rpc('staff_names').then(function (names) {
+          var add = el('div', 'row'); add.appendChild(el('div', 'cur', 'إضافة حضور نسيه الموظف'));
+          var sel = el('select', 'mini-s'); (names || []).forEach(function (n) { var o = el('option', null, who(n)); o.value = n; sel.appendChild(o); });
+          var a1 = el('input', 'mini-in'); a1.type = 'datetime-local'; var a2 = el('input', 'mini-in'); a2.type = 'datetime-local';
+          var b = el('button', 'btn small', 'إضافة');
+          b.onclick = function () { if (!a1.value) { toast('اكتب وقت الحضور', true); return; }
+            rpc('attendance_set', { p_id: null, p_email: sel.value, p_in: new Date(a1.value).toISOString(), p_out: a2.value ? new Date(a2.value).toISOString() : null, p_note: 'manual' })
+              .then(function () { toast('اتضاف'); loadAtt(); }).catch(function (e) { toast('فشل: ' + e.message, true); }); };
+          add.append(sel, a1, a2, b); body.appendChild(add);
+        }).catch(function () {});
+      }).catch(function (e) { body.appendChild(el('div', 'muted', 'تعذر التحميل: ' + e.message)); });
+    }
+
+    // ----- expenses
+    function loadExp() {
+      secE.querySelectorAll('.ops-body').forEach(function (n) { n.remove(); });
+      var body = el('div', 'ops-body'); secE.appendChild(body);
+      rpcGet('/rest/v1/shifts?select=id,label&closed_at=is.null&order=id.desc&limit=1').then(function (sh) {
+        var shift = sh && sh[0];
+        if (!shift) { body.appendChild(el('div', 'muted', 'مفيش وردية مفتوحة. افتح وردية من صفحة الغرف الأول.')); return; }
+        var f = el('div', 'row'); f.appendChild(el('div', 'cur', 'مصروف جديد في الوردية ' + (shift.label || '#' + shift.id) + (admin || !CFG.expenseCap ? '' : ' · الحد ' + CFG.expenseCap + ' جنيه للمرة')));
+        var am = el('input', 'price-in'); am.inputMode = 'numeric'; am.placeholder = 'المبلغ';
+        var rs = el('input', 'm-in'); rs.placeholder = 'السبب (مثال: ثلج، منظفات)'; rs.maxLength = 120;
+        var b = el('button', 'btn small', 'سجّل المصروف'); gate(b, 'expense');
+        b.onclick = function () {
+          var v = digits(am.value)[0]; if (!(v > 0) || rs.value.trim().length < 2) { toast('المبلغ والسبب مطلوبين', true); return; }
+          b.disabled = true;
+          rpc('log_expense', { p_amount: v, p_reason: rs.value.trim() }).then(function () { toast('اتسجل المصروف'); loadExp(); }).catch(function (e) { toast('فشل: ' + e.message, true); b.disabled = false; });
+        };
+        f.append(am, rs, b); body.appendChild(f);
+        rpcGet('/rest/v1/expenses?select=*&shift_id=eq.' + shift.id + '&order=id.desc').then(function (rows) {
+          var tot = 0;
+          (rows || []).forEach(function (x) {
+            if (!x.voided_at) tot += x.amount;
+            var row = el('div', 'row' + (x.voided_at ? ' oos' : ''));
+            row.appendChild(el('div', 'cur', fmtT(x.at) + ' · ' + who(x.actor) + ' · ' + x.reason + (x.voided_at ? ' · ملغي: ' + x.void_reason : '')));
+            row.appendChild(el('div', 'name', x.amount + ' جنيه'));
+            if (admin && !x.voided_at) {
+              var vb = el('button', 'btn small ghost danger', 'إلغاء');
+              vb.onclick = function () { var r = prompt('سبب إلغاء المصروف؟'); if (!r || r.trim().length < 2) return;
+                rpc('void_expense', { p_id: x.id, p_reason: r.trim() }).then(function () { toast('اتلغى'); loadExp(); }).catch(function (e) { toast('فشل: ' + e.message, true); }); };
+              row.appendChild(vb);
+            }
+            body.appendChild(row);
+          });
+          body.appendChild(el('div', 'bill-row total', 'إجمالي مصروفات الوردية: ' + tot + ' جنيه (بيتخصم من النقدية المتوقعة عند قفل الوردية)'));
+        });
+      });
+    }
+
+    // ----- advances
+    function loadAdv() {
+      secV.querySelectorAll('.ops-body').forEach(function (n) { n.remove(); });
+      var body = el('div', 'ops-body'); secV.appendChild(body);
+      var rg = monthRange(mi.value);
+      rpcGet('/rest/v1/advances?select=*&order=id.desc&limit=2000').then(function (rows) {
+        rows = (rows || []).filter(function (r) { return !r.voided_at; });
+        var bal = {}, inMonth = {};
+        rows.forEach(function (r) {
+          var sgn = r.kind === 'repay' ? -1 : 1; bal[r.staff_email] = (bal[r.staff_email] || 0) + sgn * r.amount;
+          if (r.at >= rg[0] && r.at < rg[1]) inMonth[r.staff_email] = (inMonth[r.staff_email] || 0) + sgn * r.amount;
+        });
+        var addRow = function (names) {
+          var f = el('div', 'row'); f.appendChild(el('div', 'cur', 'تسجيل سلفة'));
+          var sel = el('select', 'mini-s'); names.forEach(function (n) { var o = el('option', null, who(n)); o.value = n; sel.appendChild(o); });
+          var am = el('input', 'price-in'); am.inputMode = 'numeric'; am.placeholder = 'المبلغ';
+          var nt = el('input', 'm-in'); nt.placeholder = 'ملاحظة'; nt.maxLength = 100;
+          var kind = el('select', 'mini-s'); [['advance', 'سلفة'], ['repay', 'خصم من المرتب (سداد)']].forEach(function (o) { if (o[0] === 'repay' && !admin) return; var op = el('option', null, o[1]); op.value = o[0]; kind.appendChild(op); });
+          var b = el('button', 'btn small', 'سجّل'); gate(b, 'advance');
+          b.onclick = function () { var v = digits(am.value)[0]; if (!(v > 0)) { toast('اكتب المبلغ', true); return; }
+            b.disabled = true; rpc('give_advance', { p_email: sel.value, p_amount: v, p_note: nt.value, p_kind: kind.value }).then(function () { toast('اتسجل'); loadAdv(); }).catch(function (e) { toast('فشل: ' + e.message, true); b.disabled = false; }); };
+          f.append(sel, am, nt, kind, b); body.insertBefore(f, body.firstChild);
+        };
+        if (can('advance')) rpc('staff_names').then(addRow).catch(function () {});
+        var mine = el('div', 'cur', 'رصيد سلفك: ' + (bal[me] || 0) + ' جنيه'); if (!admin) body.appendChild(mine);
+        if (admin) {
+          var csv = [['الموظف', 'رصيد السلف المتبقي', 'صافي الشهر']];
+          var tb = el('div', 'ops-emp'); tb.appendChild(el('div', 'name', 'أرصدة السلف (السلف − المسدد) وصافي حركة الشهر'));
+          Object.keys(bal).sort().forEach(function (em) {
+            tb.appendChild(el('div', 'cur', who(em) + ' · الرصيد ' + bal[em] + ' جنيه · الشهر ' + (inMonth[em] || 0) + ' جنيه'));
+            csv.push([who(em), bal[em], inMonth[em] || 0]);
+          });
+          if (!Object.keys(bal).length) tb.appendChild(el('div', 'muted', 'مفيش سلف مسجلة'));
+          body.appendChild(tb);
+          var ex = el('button', 'btn small ghost', 'تصدير CSV'); ex.onclick = function () { csvDown('advances-' + mi.value + '.csv', csv); }; body.appendChild(ex);
+        }
+        rows.slice(0, 40).forEach(function (r) {
+          var row = el('div', 'row');
+          row.appendChild(el('div', 'cur', dayKey(r.at) + ' · ' + who(r.staff_email) + ' · ' + (r.kind === 'repay' ? 'سداد ' : 'سلفة ') + r.amount + ' جنيه' + (r.note ? ' · ' + r.note : '') + ' · بواسطة ' + who(r.actor)));
+          if (admin) { var vb = el('button', 'btn small ghost danger', 'إلغاء');
+            vb.onclick = function () { var x = prompt('سبب الإلغاء؟'); if (!x || x.trim().length < 2) return; rpc('void_advance', { p_id: r.id, p_reason: x.trim() }).then(function () { toast('اتلغى'); loadAdv(); }).catch(function (e) { toast('فشل: ' + e.message, true); }); }; row.appendChild(vb); }
+          body.appendChild(row);
+        });
+      }).catch(function (e) { body.appendChild(el('div', 'muted', 'تعذر التحميل: ' + e.message)); });
+    }
+    run();
+  }
 
   // ---------- settings (admin only) ----------
   var PRESETS = [
@@ -941,7 +1117,7 @@
   function bootPerms() {
     var host = $('sPerms'); if (!host) return; host.textContent = '';
     PERMS.forEach(function (p) {
-      var L = el('label', 'chk perm-row'), c = el('input'); c.type = 'checkbox'; c.dataset.perm = p[0]; c.checked = (CFG.perms || {})[p[0]] !== false;
+      var L = el('label', 'chk perm-row'), c = el('input'); c.type = 'checkbox'; c.dataset.perm = p[0]; c.checked = p[0] === 'advance' ? (CFG.perms || {})[p[0]] === true : (CFG.perms || {})[p[0]] !== false;
       L.append(c, document.createTextNode(p[1])); host.appendChild(L);
     });
     var hist = $('sPermHist'); if (hist) {
@@ -961,7 +1137,7 @@
     var b = CFG.brand, t = CFG.theme || {}, rc = CFG.receipt;
     $('sName').value = b.name; $('sLogo').value = b.logo_url || '';
     $('sPrimary').value = t.primary || '#22d3ee'; $('sAccent').value = t.accent || '#f472b6'; $('sBg').value = t.bg || '#080c15'; $('sSurface').value = t.surface || '#121a2c'; $('sText').value = t.text || '#eaf0ff';
-    $('sRep').value = CFG.reprice ? 'all' : 'from_now'; $('sT2').value = tierLabel(2); $('sT4').value = tierLabel(4); $('sDir').value = CFG.dir; $('sCur').value = CFG.currency;
+    $('sExpCap').value = CFG.expenseCap; $('sRep').value = CFG.reprice ? 'all' : 'from_now'; $('sT2').value = tierLabel(2); $('sT4').value = tierLabel(4); $('sDir').value = CFG.dir; $('sCur').value = CFG.currency;
     $('sSub').value = rc.subtitle; $('sFoot').value = rc.footer; $('sExtra').value = rc.extra || '';
     $('sTypes').value = CFG.room_types.map(function (x) { return x.id + '|' + x.label; }).join('\n');
     $('sShifts').value = CFG.shifts.join('\n'); $('sLabels').value = CFG.labels || '';
@@ -981,7 +1157,7 @@
       // a theme is written ONLY when the admin picked/changed colors (or pressed reset, which clears it); otherwise the stored value is kept untouched
       theme: themeAction === 'reset' ? {} : themeAction === 'set' ? { primary: $('sPrimary').value, accent: $('sAccent').value, bg: $('sBg').value, surface: $('sSurface').value, text: $('sText').value } : (CFG.theme || {}),
       reprice_elapsed: $('sRep').value === 'all',
-      cashier_perms: CFG.perms || {},
+      cashier_perms: CFG.perms || {}, expense_cap: Math.max(0, Math.min(100000, Number($('sExpCap').value) || 0)),
       tiers: { '2': $('sT2').value.trim().slice(0, 20) || 'فردي', '4': $('sT4').value.trim().slice(0, 20) || 'زوجي' },
       dir: $('sDir').value, currency: $('sCur').value.trim().slice(0, 12) || 'جنيه',
       receipt: { subtitle: $('sSub').value.trim(), footer: $('sFoot').value.trim(), extra: $('sExtra').value.trim() },

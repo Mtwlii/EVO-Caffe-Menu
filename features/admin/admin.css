@@ -171,3 +171,4 @@ textarea{font-family:inherit;font-size:14px;padding:10px 12px;border-radius:var(
 .perm-row{padding:10px 12px;border:1px solid var(--a-line);border-radius:10px;background:var(--a-surface)}
 .perm-hist{margin:10px 0 16px}
 .perm-off{opacity:.45;cursor:not-allowed}
+.ops-sec{margin-bottom:16px}.ops-emp{margin:10px 0;padding:8px 10px;border:1px solid var(--a-line);border-radius:12px}.ops-emp .name{font-weight:700;margin-bottom:6px}.mini-in{padding:7px 8px;min-width:140px}
