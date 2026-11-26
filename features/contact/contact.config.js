@@ -3,8 +3,8 @@
 // map: a Google Maps share link   instagram / facebook / tiktok: full profile links
 window.EVO_CONTACT = {
   address: 'شارع الحرية، ميت غمر',
-  hours: 'مواعيد العمل: من 10 صباحًا إلى 6 مساءً',
-  hoursEn: 'Hours: 10 AM to 6 PM',
+  hours: 'مواعيد العمل: من 10 صباحًا حتى 6 صباحًا',
+  hoursEn: 'Hours: 10 AM to 6 AM',
   phone: '',
   whatsapp: '201008533066',
   autoOrder: true, // orders post to /api/order (Telegram group); WhatsApp is the fallback
