@@ -190,3 +190,9 @@ textarea{font-family:inherit;font-size:14px;padding:10px 12px;border-radius:var(
 .rc-logo{display:block;margin:0 auto 4px;max-width:70%;max-height:60px;width:auto;height:auto;image-rendering:pixelated;filter:grayscale(1) contrast(2)}
 .receipt-paper.w58 .rc-logo{max-width:60%;max-height:44px}
 @media print{body.print-receipt .rc-logo{max-width:60mm;max-height:22mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}body.print-receipt .receipt-paper.w58 .rc-logo{max-width:40mm;max-height:16mm}}
+
+.chipbox{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 12px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid var(--line,#2a3550);border-radius:999px;cursor:pointer;min-height:40px}
+.chip input{width:18px;height:18px}
+.chip:has(input:checked){border-color:var(--primary,#22d3ee);background:rgba(34,211,238,.12)}
+.adv{margin:8px 0}.adv summary{cursor:pointer;color:var(--muted,#8a96b4);padding:8px 0}

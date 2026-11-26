@@ -1509,6 +1509,51 @@
     im.onerror = function () { toast('الصورة مش مقروءة (PNG أو JPG أو SVG)', true); };
     im.src = src;
   }
+  // ---------- settings: every setting is a choice (select / checkboxes); saved custom values stay selectable ----------
+  var TZS = [['Africa/Cairo', 'القاهرة'], ['Asia/Riyadh', 'الرياض'], ['Asia/Dubai', 'دبي'], ['Asia/Kuwait', 'الكويت'], ['Asia/Qatar', 'قطر'], ['Asia/Bahrain', 'البحرين'], ['Asia/Baghdad', 'بغداد'], ['Asia/Amman', 'عمّان'], ['Asia/Beirut', 'بيروت'], ['Africa/Casablanca', 'الدار البيضاء'], ['Africa/Tunis', 'تونس'], ['Africa/Algiers', 'الجزائر'], ['Africa/Khartoum', 'الخرطوم'], ['Europe/Istanbul', 'إسطنبول'], ['Europe/London', 'لندن'], ['Europe/Paris', 'باريس'], ['America/New_York', 'نيويورك'], ['UTC', 'UTC']];
+  var CURS = ['جنيه', 'ج.م', 'EGP', 'ريال', 'ر.س', 'SAR', 'درهم', 'AED', 'دينار', 'KWD', '$', '€', '£'].map(function (x) { return [x, x]; });
+  var T_OPTS = [['فردي', 'فردي'], ['زوجي', 'زوجي'], ['2 يد', '2 يد'], ['4 يد', '4 يد'], ['Single', 'Single'], ['Multi', 'Multi'], ['2P', '2P'], ['4P', '4P']];
+  var SUBS = [['إيصال', 'إيصال'], ['فاتورة', 'فاتورة'], ['Receipt', 'Receipt'], ['Invoice', 'Invoice'], ['', 'بدون عنوان فرعي']];
+  var FOOTS = [['شكراً لزيارتكم', 'شكراً لزيارتكم'], ['نورتونا', 'نورتونا'], ['بالهنا والشفا', 'بالهنا والشفا'], ['منتظرينكم تاني', 'منتظرينكم تاني'], ['Thank you for visiting', 'Thank you for visiting'], ['', 'بدون رسالة']];
+  var HOURS = []; for (var hh = 0; hh <= 12; hh++) HOURS.push([String(hh), hh === 0 ? 'منتصف الليل (12 ص)' : hh === 12 ? '12 الظهر' : hh + ' ص']);
+  var CAPS = [['0', 'بدون حد'], ['50', '50'], ['100', '100'], ['200', '200'], ['300', '300'], ['500', '500'], ['1000', '1000'], ['2000', '2000'], ['5000', '5000'], ['10000', '10000']];
+  var TYPE_PRE = [['ps4', 'PS4'], ['ps5', 'PS5'], ['vip', 'VIP'], ['xbox', 'Xbox'], ['pc', 'PC'], ['billiard', 'بلياردو'], ['pingpong', 'بينج بونج'], ['foosball', 'فوتبول'], ['vr', 'VR']];
+  var SHIFT_PRE = ['صباحي', 'مسائي', 'ليلي', 'الصباح', 'المساء', 'Morning', 'Evening', 'Night'];
+  function fillSel(id, opts, cur) {
+    var sel = $(id); if (!sel) return; sel.textContent = '';
+    cur = String(cur == null ? '' : cur);
+    var has = opts.some(function (o) { return o[0] === cur; });
+    var all = has ? opts : opts.concat([[cur, cur + ' (الحالي)']]);
+    all.forEach(function (o) { var op = document.createElement('option'); op.value = o[0]; op.textContent = o[1]; sel.appendChild(op); });
+    sel.value = cur;
+  }
+  function chips(boxId, taId, presets, parse, fmt) {
+    var box = $(boxId), ta = $(taId); if (!box || !ta) return;
+    var cur = ta.value.split('\n').map(function (l) { return l.trim(); }).filter(Boolean).map(parse);
+    var all = presets.slice();
+    cur.forEach(function (c) { if (!all.some(function (a) { return a.k === c.k; })) all.push(c); });
+    box.textContent = '';
+    all.forEach(function (a) {
+      var l = document.createElement('label'); l.className = 'chip';
+      var c = document.createElement('input'); c.type = 'checkbox'; c.dataset.k = a.k; c.checked = cur.some(function (x) { return x.k === a.k; });
+      var sp = document.createElement('span'); sp.textContent = a.label;
+      l.append(c, sp); box.appendChild(l);
+      c.onchange = function () {
+        ta.value = all.filter(function (x) { var cb = box.querySelector('input[data-k="' + x.k.replace(/"/g, '') + '"]'); return cb && cb.checked; }).map(fmt).join('\n');
+      };
+    });
+  }
+  function enhanceSettings() {
+    var rc = CFG.receipt || {};
+    fillSel('sCur', CURS, CFG.currency); fillSel('sT2', T_OPTS, tierLabel(2)); fillSel('sT4', T_OPTS, tierLabel(4));
+    fillSel('sTz', TZS, CFG.tz); fillSel('sDayStart', HOURS, CFG.dayStart); fillSel('sExpCap', CAPS, CFG.expenseCap);
+    fillSel('sSub', SUBS, rc.subtitle); fillSel('sFoot', FOOTS, rc.footer);
+    chips('sTypesBox', 'sTypes', TYPE_PRE.map(function (t) { return { k: t[0], label: t[1], id: t[0] }; }),
+      function (l) { var p = l.split('|'); var id = (p[0] || '').trim().toLowerCase(); return { k: id, id: id, label: (p[1] || p[0] || '').trim() }; },
+      function (x) { return x.id + '|' + x.label; });
+    chips('sShiftsBox', 'sShifts', SHIFT_PRE.map(function (n) { return { k: n, label: n }; }),
+      function (l) { return { k: l, label: l }; }, function (x) { return x.label; });
+  }
   function bootSettings() {
     buildPresets(); bootPerms(); themeAction = null;
     var b = CFG.brand, t = CFG.theme || {}, rc = CFG.receipt;
@@ -1517,7 +1562,7 @@
     $('sExpCap').value = CFG.expenseCap; $('sTz').value = CFG.tz; $('sDayStart').value = CFG.dayStart; $('sRcW').value = String(CFG.rcWidth); $('sRep').value = CFG.reprice ? 'all' : 'from_now'; $('sT2').value = tierLabel(2); $('sT4').value = tierLabel(4); $('sDir').value = CFG.dir; $('sCur').value = CFG.currency;
     $('sRcLogo').checked = !!rc.logo; rcImg = rc.logo_img || ''; drawRcLogo(); $('sSub').value = rc.subtitle; $('sFoot').value = rc.footer; $('sExtra').value = rc.extra || '';
     $('sTypes').value = CFG.room_types.map(function (x) { return x.id + '|' + x.label; }).join('\n');
-    $('sShifts').value = CFG.shifts.join('\n'); $('sLabels').value = CFG.labels || '';
+    $('sShifts').value = CFG.shifts.join('\n'); $('sLabels').value = CFG.labels || ''; enhanceSettings();
   }
   $('sRcLogoFile').onchange = function () {
     var f = this.files && this.files[0]; if (!f) return;

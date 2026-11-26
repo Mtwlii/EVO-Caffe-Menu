@@ -68,28 +68,27 @@
         </div>
         <label>لو اتغيّر VIP أو فردي/زوجي أثناء الجلسة <select id="sRep" class="mini-s"><option value="all">أعيد حساب الجلسة كلها بالسعر الجديد</option><option value="from_now">السعر الجديد من دلوقتي بس</option></select></label>
         <label>اتجاه الصفحة <select id="sDir" class="mini-s"><option value="rtl">من اليمين لليسار</option><option value="ltr">من اليسار لليمين</option></select></label>
-        <label>العملة <input id="sCur" maxlength="12"></label>
-        <div class="set-colors"><label>اسم الخيار الأول (2 يد) <input id="sT2" maxlength="20"></label><label>اسم الخيار التاني (4 يد) <input id="sT4" maxlength="20"></label></div>
+        <label>العملة <select id="sCur" class="mini-s"></select></label>
+        <div class="set-colors"><label>اسم الخيار الأول (2 يد) <select id="sT2" class="mini-s"></select></label><label>اسم الخيار التاني (4 يد) <select id="sT4" class="mini-s"></select></label></div>
         <div class="r-title">الإيصال</div>
-        <label>عنوان فرعي <input id="sSub" maxlength="40"></label>
-        <label>سطر إضافي (عنوان / تليفون) <input id="sExtra" maxlength="80"></label>
-        <label>رسالة الختام <input id="sFoot" maxlength="60"></label>
+        <label>عنوان فرعي <select id="sSub" class="mini-s"></select></label>
+        <label>سطر إضافي (عنوان / تليفون، اختياري) <input id="sExtra" maxlength="80" placeholder="سيبه فاضي لو مش محتاجه"></label>
+        <label>رسالة الختام <select id="sFoot" class="mini-s"></select></label>
         <div class="r-title">التشغيل</div>
-        <label>أنواع الغرف (سطر لكل نوع: كود|الاسم)<textarea id="sTypes" rows="3" dir="ltr"></textarea></label>
-        <label>أسماء الورديات (سطر لكل اسم)<textarea id="sShifts" rows="3"></textarea></label>
-        <label>تغيير نصوص (سطر: النص القديم=>النص الجديد)<textarea id="sLabels" rows="4"></textarea></label>
+        <div class="r-title" style="font-size:13px">أنواع الغرف (اختار)</div><div id="sTypesBox" class="chipbox"></div><textarea id="sTypes" hidden></textarea>
+        <div class="r-title" style="font-size:13px">الورديات (اختار)</div><div id="sShiftsBox" class="chipbox"></div><textarea id="sShifts" hidden></textarea>
+        <details class="adv"><summary>متقدم: تغيير نصوص في التطبيق (اختياري)</summary><label>سطر: النص القديم=>النص الجديد<textarea id="sLabels" rows="3"></textarea></label></details>
         <p class="muted small-note">التليجرام: توكن البوت بيتحط في إعدادات النشر (Vercel) مش هنا، لأنه سر. باقي الإعدادات هنا بتتحفظ في قاعدة البيانات.</p>
         <div class="r-title" style="margin-top:18px">صلاحيات الكاشير</div>
         <p class="muted">اقفل أو افتح كل إجراء للكاشير. الأدمن دايماً مسموح له. بتتطبق من السيرفر على طول وكل تغيير بيتسجل.</p>
-        <label>المنطقة الزمنية للتقارير (IANA مثل Africa/Cairo) <input id="sTz" list="tzList" maxlength="40"></label>
-        <datalist id="tzList"><option value="Africa/Cairo"><option value="Asia/Riyadh"><option value="Asia/Dubai"><option value="Asia/Kuwait"><option value="Asia/Baghdad"><option value="Africa/Casablanca"><option value="Africa/Tunis"><option value="Europe/Istanbul"><option value="Europe/London"><option value="UTC"></datalist>
-        <label>اليوم التجاري يبدأ الساعة (0-12). مبيعات بعد منتصف الليل تتحسب على اليوم اللي قبله <input id="sDayStart" inputmode="numeric" maxlength="2"></label>
+        <label>المنطقة الزمنية للتقارير <select id="sTz" class="mini-s"></select></label>
+        <label>اليوم التجاري يبدأ الساعة (مبيعات بعد منتصف الليل بتتحسب على اليوم اللي قبله) <select id="sDayStart" class="mini-s"></select></label>
         <label class="chk"><input type="checkbox" id="sRcLogo"> لوجو على الإيصال وتقرير الوردية (أبيض وأسود)</label>
         <img id="sRcLogoPrev" alt="" hidden style="background:#fff;max-width:200px;max-height:80px;padding:4px;border-radius:6px">
         <label>رفع لوجو (PNG/JPG/SVG) <input type="file" id="sRcLogoFile" accept="image/png,image/jpeg,image/svg+xml"></label>
         <div><button id="sRcLogoEvo" class="btn ghost small" type="button">استخدم لوجو EVO</button> <button id="sRcLogoClear" class="btn ghost small" type="button">شيل اللوجو</button></div>
         <label>عرض ورق الطباعة <select id="sRcW"><option value="80">80 مم</option><option value="58">58 مم</option></select></label>
-        <label>أقصى مبلغ مصروف للكاشير في المرة (0 = بدون حد) <input id="sExpCap" inputmode="numeric" maxlength="6"></label>
+        <label>أقصى مبلغ مصروف للكاشير في المرة <select id="sExpCap" class="mini-s"></select></label>
         <div id="sPerms" class="perms"></div>
         <button id="sPermSave" class="btn small" type="button">حفظ الصلاحيات</button>
         <div id="sPermHist" class="perm-hist"></div>
