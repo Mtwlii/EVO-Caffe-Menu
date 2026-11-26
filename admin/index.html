@@ -41,6 +41,7 @@
       <button id="tabDash" class="adm-only">التقارير</button>
       <button id="tabStaff" class="adm-only">الموظفين</button>
       <button id="tabSettings" class="adm-only">الإعدادات</button>
+      <button id="tabAccount">حسابي</button>
     </div>
     <div id="menuTab">
     <div class="toolbar">
@@ -52,6 +53,16 @@
     <div id="ordersTab" hidden>
       <p class="muted">آخر الطلبات من المنيو. اطبع إيصال للزبون من هنا.</p>
       <div id="orders"></div>
+    </div>
+    <div id="accountTab" hidden>
+      <div class="room set-form">
+        <div class="r-title">تغيير الباسورد</div>
+        <label>الباسورد الحالي <input id="pwOld" type="password" autocomplete="current-password" dir="ltr"></label>
+        <label>الباسورد الجديد (8 حروف على الأقل) <input id="pwNew" type="password" autocomplete="new-password" dir="ltr"></label>
+        <label>أكّد الباسورد الجديد <input id="pwNew2" type="password" autocomplete="new-password" dir="ltr"></label>
+        <div id="pwErr" class="err" hidden></div>
+        <button id="pwBtn" class="btn">غيّر الباسورد</button>
+      </div>
     </div>
     <div id="settingsTab" hidden>
       <div class="room set-form">

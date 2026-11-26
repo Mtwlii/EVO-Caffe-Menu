@@ -965,13 +965,31 @@
     }).catch(function (e) { toast('فشل تحميل الطلبات: ' + e.message, true); });
   }
   function pick(tab) {
-    ['Menu', 'Rooms', 'Orders', 'Sale', 'Ops', 'Stock', 'Dash', 'Staff', 'Settings'].forEach(function (n) {
+    ['Menu', 'Rooms', 'Orders', 'Sale', 'Ops', 'Stock', 'Dash', 'Staff', 'Settings', 'Account'].forEach(function (n) {
       $('tab' + n).classList.toggle('on', n === tab); $((n.toLowerCase()) + 'Tab').hidden = n !== tab;
     });
     clearTimers();
   }
   $('tabMenu').onclick = function () { pick('Menu'); };
   $('tabSettings').onclick = function () { pick('Settings'); bootSettings(); };
+  $('tabAccount').onclick = function () { pick('Account'); $('pwOld').value = $('pwNew').value = $('pwNew2').value = ''; $('pwErr').hidden = true; };
+  $('pwBtn').onclick = function () {
+    var o = $('pwOld').value, n = $('pwNew').value, n2 = $('pwNew2').value, er = $('pwErr'), btn = $('pwBtn');
+    function bad(m) { er.textContent = m; er.hidden = false; }
+    er.hidden = true;
+    if (!o) return bad('اكتب الباسورد الحالي');
+    if (n.length < 8) return bad('الباسورد الجديد لازم 8 حروف على الأقل');
+    if (n !== n2) return bad('الباسورد الجديد والتأكيد مش زي بعض');
+    if (n === o) return bad('الباسورد الجديد لازم يختلف عن الحالي');
+    btn.disabled = true;
+    // re-verify the current password first, then set the new one on the fresh session
+    api('/auth/v1/token?grant_type=password', { method: 'POST', body: JSON.stringify({ email: myEmail(), password: o }) })
+      .catch(function () { throw new Error('الباسورد الحالي غلط'); })
+      .then(function (j) { saveSes(j); return api('/auth/v1/user', { method: 'PUT', body: JSON.stringify({ password: n }) }); })
+      .then(function () { $('pwOld').value = $('pwNew').value = $('pwNew2').value = ''; toast('تم تغيير الباسورد'); })
+      .catch(function (e) { bad(e.message); })
+      .then(function () { btn.disabled = false; });
+  };
   $('tabStaff').onclick = function () { pick('Staff'); bootStaff(); };
   $('tabOps').onclick = function () { pick('Ops'); bootOps(); };
   $('tabStock').onclick = function () { pick('Stock'); bootStock(); };
