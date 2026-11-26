@@ -17,6 +17,7 @@
   var info = '';
   if (c.address) info += '<div class="c-line">' + c.address + '</div>';
   if (c.hours) info += '<div class="c-line">' + c.hours + '</div>';
+  if (c.hoursEn) info += '<div class="c-line c-en" dir="ltr">' + c.hoursEn + '</div>';
   if (links.length || info) {
     var box = document.createElement('div'); box.className = 'contact';
     box.innerHTML = info + (links.length ? '<div class="c-row">' + links.join('') + '</div>' : '');

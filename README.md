@@ -60,7 +60,8 @@ Open `index.html` in a browser. No install, no build.
 ## Roadmap (edit freely)
 Near term
 - [ ] Real photos: hero and one per category
-- [ ] Phone, opening hours and social links in the contact config
+- [x] Opening hours (AR and EN), Instagram and Facebook in the contact config
+- [ ] Phone number and TikTok in the contact config
 - [ ] Labels for two-price items (for example small and large)
 - [ ] Test the order flow on real iOS and Android phones
 - [ ] Move menu data into a JSON file and render all views from it
