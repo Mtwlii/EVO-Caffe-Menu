@@ -139,7 +139,7 @@ Brand name, colors/theme, text direction, currency, receipt text, room types, sh
 - Done: inventory (tab "المخزون"): recipes, auto-deduct, void restore, shift count, low-stock alerts
 - Roadmap, ranked by value for selling to many cafes:
   1. Sales and profit dashboard (daily/monthly revenue, expenses, item cost from recipes, profit, top items, busiest hours, per-room/per-cashier)
-  2. Receipts and print formats (58/80mm thermal, bill and shift report), blind stock count
+  2. Extend printing (80mm bill receipt exists): shift report, takeaway slip, 58mm, silent print; blind stock count
   3. Customer accounts, memberships, prepaid hours and loyalty points
   4. Multi-branch / multi-tenant (one project per client now; later branch_id plus tenant isolation) and one-click onboarding
   5. Room reservations and a waiting list
