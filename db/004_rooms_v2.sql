@@ -208,16 +208,17 @@ grant execute on function public.carry_over_session(uuid) to authenticated;
 create or replace function public.shift_totals(p_shift_id smallint)
 returns jsonb language sql security definer set search_path = public as $$
   select jsonb_build_object(
-    'sessions', count(*) filter (where shift_id = p_shift_id),
-    'minutes', coalesce(sum(extract(epoch from (ended_at - started_at))/60) filter (where shift_id = p_shift_id),0)::int,
-    'time_amount', coalesce(sum(time_amount) filter (where shift_id = p_shift_id),0),
-    'items_amount', coalesce(sum(items_amount) filter (where shift_id = p_shift_id),0),
-    'discount_amount', coalesce(sum(discount_amount) filter (where shift_id = p_shift_id),0),
-    'service_amount', coalesce(sum(service_amount) filter (where shift_id = p_shift_id),0),
-    'total', coalesce(sum(amount) filter (where shift_id = p_shift_id),0),
-    'deposits_received', coalesce(sum(deposit_amount) filter (where deposit_shift_id = p_shift_id),0),
-    'collected_at_close', coalesce(sum(amount - deposit_amount) filter (where shift_id = p_shift_id),0))
-  from room_sessions where ended_at is not null and (shift_id = p_shift_id or deposit_shift_id = p_shift_id);
+    'sessions', count(*),
+    'minutes', coalesce(sum(extract(epoch from (ended_at - started_at))/60),0)::int,
+    'time_amount', coalesce(sum(time_amount),0),
+    'items_amount', coalesce(sum(items_amount),0),
+    'discount_amount', coalesce(sum(discount_amount),0),
+    'service_amount', coalesce(sum(service_amount),0),
+    'total', coalesce(sum(amount),0),
+    'collected_at_close', coalesce(sum(amount - deposit_amount),0),
+    -- deposits count in the shift that received them, even if the session is still open
+    'deposits_received', (select coalesce(sum(deposit_amount),0) from room_sessions where deposit_shift_id = p_shift_id))
+  from room_sessions where ended_at is not null and shift_id = p_shift_id;
 $$;
 revoke all on function public.shift_totals(smallint) from public, anon;
 grant execute on function public.shift_totals(smallint) to authenticated;
