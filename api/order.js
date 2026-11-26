@@ -67,6 +67,20 @@ module.exports = async function (req, res) {
     } catch (e) { tracked = false; }
   }
 
+  // Rooms v2: an order placed from a room (type غرفة) is added to that room's
+  // open session bill. No open session -> nothing happens, order is unaffected.
+  var roomAttached = false;
+  if (type === 'غرفة' && SUPA_URL && SUPA_KEY) {
+    try {
+      var ar = await fetch(SUPA_URL + '/rest/v1/rpc/attach_order_to_room', {
+        method: 'POST',
+        headers: { apikey: SUPA_KEY, authorization: 'Bearer ' + SUPA_KEY, 'content-type': 'application/json' },
+        body: JSON.stringify({ p_code: num, p_order_id: oid, p_items: b.items.map(function (x) { return { name: s(x.name, 60), price: Number(x.price), qty: Number(x.qty) }; }) })
+      });
+      roomAttached = ar.ok && (await ar.json()) === true;
+    } catch (e) { roomAttached = false; }
+  }
+
   var msg = { chat_id: null, text: text.join('\n') };
   if (tracked) {
     msg.reply_markup = { inline_keyboard: [[
@@ -90,6 +104,6 @@ module.exports = async function (req, res) {
     var moved = j && j.parameters && j.parameters.migrate_to_chat_id;
     if (!r.ok && moved) { r = await post(moved); j = {}; try { j = await r.json(); } catch (e) {} }
     if (!r.ok) return res.status(502).json({ ok: false, error: 'telegram', code: r.status, detail: s(j.description, 80), moved: !!moved });
-    res.status(200).json({ ok: true, tracked: tracked, id: tracked ? oid : null });
+    res.status(200).json({ ok: true, tracked: tracked, id: tracked ? oid : null, room_attached: roomAttached });
   } catch (e) { res.status(502).json({ ok: false, error: 'network', detail: s(e && e.message, 80) }); }
 };
