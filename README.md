@@ -106,7 +106,7 @@ Staff app at `/admin/` (Supabase Auth + Postgres, Vercel serverless, free tiers)
 - Offline mode: offline banner, cached rooms, closes queued in the browser and synced on reconnect with conflict handling, manual summary button, service worker (`admin/sw.js`).
 
 ### Setup
-1. Create a Supabase project, run `db/*.sql` in order in the SQL editor (001 to 013 for a new project; an existing project that has 001 to 005 needs 006 onward).
+1. Create a Supabase project, run `db/*.sql` in order in the SQL editor (001 to 014 for a new project; an existing project that has 001 to 005 needs 006 onward).
 2. Put the project URL and publishable key in the admin config. Create the admin user in Supabase Auth and add it to `staff_emails`/roles per `007`.
 3. Vercel env vars: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`; register the Telegram webhook to the deployment you want.
 4. Never commit secrets. Passwords are typed in the panel only.
@@ -122,6 +122,7 @@ Staff app at `/admin/` (Supabase Auth + Postgres, Vercel serverless, free tiers)
 | 011_reprice | reprice mode setting, `session_time_cost`, totals in audit |
 | 012_menu | customer menu tables (`menu_categories`, `menu_items`), seeded from the static page, public read, admin write |
 | 013_cashier_perms | per-action cashier permissions (`staff_can`, `set_cashier_perms`), permission audit table |
+| 014_ops | staff attendance (check in/out), shift expenses deducted from expected cash, salary advances with balances, ops audit |
 
 ### White-label settings (admin, "الإعدادات")
 Brand name, colors/theme, text direction, currency, receipt text, room types, shifts, label swaps, فردي/زوجي names, reprice mode. One client = one Supabase project + one Vercel project.
@@ -132,4 +133,6 @@ Brand name, colors/theme, text direction, currency, receipt text, room types, sh
 ### Roadmap
 - Menu photos upload (today: https image links), per-item options
 - Reports by shift and cashier, CSV export
+- Done: attendance, petty expenses, salary advances (tab "الحضور والمالية")
+- Next: inventory with recipes, auto-deduct, stock count, low-stock alerts
 - Multi-branch option
