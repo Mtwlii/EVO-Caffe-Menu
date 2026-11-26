@@ -133,6 +133,11 @@ Brand name, colors/theme, text direction, currency, receipt text, room types, sh
 ### Customer menu from the database
 `index.html` keeps the static menu as a fallback. `features/data/menu-db.js` loads categories and items from Supabase (public read), renders them, caches them in localStorage (`evo-menu-cache-v1`) so the menu still opens offline after the first visit, then loads the other scripts. Admin "المنيو" tab edits categories, items (name, description, price/s, image link, hide, out of stock, featured, order). There is no print button on the customer menu (browser print still works and prints the rendered menu; receipt printing in admin is separate). Theme colors from settings (primary, accent, background, cards, text, or a preset) apply to the menu and the admin app.
 
+### Production (live) notes
+- Live runs on the Supabase **free plan**, project `lfkhfwvxwyhhpvygtffr` (migrations 001 to 017 applied; the same project the preview used). Free-plan caveats: the project **pauses after about a week without activity** (open the admin or the menu at least weekly, or unpause it in the dashboard), and there are **no automatic backups**. Run `scripts/backup.js` daily (see `docs/ONBOARDING.md`, section "Daily backup"; the GitHub Actions template is `docs/backup-workflow.yml`) and keep the files somewhere private.
+- The Telegram webhook is registered to `https://evo-caffe-menu.vercel.app/api/telegram` (allowed_updates: callback_query). Env vars on Vercel: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`. Telegram allows one webhook per bot, so re-point it if the domain changes.
+- Admin: `https://evo-caffe-menu.vercel.app/admin/`. One test order message and test data were removed after the go-live smoke test.
+
 ### Known limits (017)
 - Fallback cost is one value per menu item (recipes are per size). Accepted customer orders count as cash at the counter. Month presets in the UI use the browser clock while the dashboard uses the client timezone. The offline queue lives in one browser. Silent printing is not built in.
 
