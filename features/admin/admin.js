@@ -44,16 +44,19 @@
     $('itemsView').hidden = view !== 'items';
     $('logout').hidden = view !== 'items';
   }
+  var ROLE = null;
+  var STAFF_DOMAIN = '@staff.evo.invalid';
+  function toLogin(v) { v = v.trim(); return v.indexOf('@') < 0 ? v.toLowerCase() + STAFF_DOMAIN : v; }
   $('loginBtn').onclick = function () {
     var btn = $('loginBtn'); btn.disabled = true; $('loginErr').hidden = true;
     api('/auth/v1/token?grant_type=password', {
       method: 'POST',
-      body: JSON.stringify({ email: $('email').value.trim(), password: $('password').value })
+      body: JSON.stringify({ email: toLogin($('email').value), password: $('password').value })
     }).then(function (j) { saveSes(j); boot(); })
       .catch(function (e) { $('loginErr').textContent = 'دخول فاشل: ' + e.message; $('loginErr').hidden = false; })
       .then(function () { btn.disabled = false; });
   };
-  $('logout').onclick = function () { clearSes(); show('login'); };
+  $('logout').onclick = function () { clearSes(); ROLE = null; document.body.classList.remove('role-staff', 'role-admin'); show('login'); };
 
   // ---------- menu source: parse the live menu page ----------
   function keyOf(name, prices) { return name + '|' + prices.join('/'); }
@@ -319,7 +322,7 @@
     });
 
     // --- rates editor ---
-    var ratesBox = el('div', 'room rates');
+    var ratesBox = el('div', 'room rates adm-only');
     ratesBox.appendChild(el('div', 'r-title', 'أسعار الساعة'));
     var rateInputs = {};
     ['ps4', 'ps5'].forEach(function (t) {
@@ -360,7 +363,7 @@
       card.appendChild(top);
 
       // room settings (name / code / type)
-      var set = el('div', 'r-set');
+      var set = el('div', 'r-set adm-only');
       var nameIn = el('input', 'mini-in wide'); nameIn.value = r.name; nameIn.setAttribute('aria-label', 'اسم الغرفة');
       var codeIn = el('input', 'mini-in'); codeIn.value = r.code || ''; codeIn.placeholder = 'الكود'; codeIn.setAttribute('aria-label', 'كود الغرفة اللي الزبون يكتبه');
       var typeIn = el('select', 'mini-s');
@@ -460,7 +463,7 @@
           row.appendChild(el('span', null, x.qty + ' × ' + x.name + ' = ' + (x.qty * x.price) + ' جنيه' + (x.source === 'order' ? ' (من المنيو)' : '') +
             (x.voided_at ? ' · ملغي: ' + (x.void_reason || '') : '')));
           if (!x.voided_at) {
-            var del = el('button', 'btn small ghost danger', 'إلغاء');
+            var del = el('button', 'btn small ghost danger adm-only', 'إلغاء');
             del.onclick = function () {
               del.hidden = true;
               var why = el('input', 'mini-in wide'); why.placeholder = 'سبب الإلغاء (مطلوب)'; why.maxLength = 120; why.setAttribute('aria-label', 'سبب الإلغاء');
@@ -566,7 +569,7 @@
         startRow.append(ctlSel, start);
         card.appendChild(startRow);
         if (!ses) {
-          var delRoom = el('button', 'btn small ghost danger', 'حذف الغرفة');
+          var delRoom = el('button', 'btn small ghost danger adm-only', 'حذف الغرفة');
           delRoom.onclick = function () {
             if (!confirm('حذف ' + r.name + '؟')) return;
             delRoom.disabled = true;
@@ -581,7 +584,7 @@
     });
 
     // --- add room ---
-    var addBox = el('div', 'room');
+    var addBox = el('div', 'room adm-only');
     addBox.appendChild(el('div', 'r-title', 'ضيف غرفة جديدة'));
     var nName = el('input', 'mini-in wide'); nName.placeholder = 'اسم الغرفة'; nName.maxLength = 40;
     var nCode = el('input', 'mini-in'); nCode.placeholder = 'الكود'; nCode.maxLength = 10;
@@ -683,29 +686,90 @@
       });
     }).catch(function (e) { toast('فشل تحميل الطلبات: ' + e.message, true); });
   }
-  $('tabMenu').onclick = function () {
-    $('tabMenu').classList.add('on'); $('tabRooms').classList.remove('on'); $('tabOrders').classList.remove('on');
-    $('menuTab').hidden = false; $('roomsTab').hidden = true; $('ordersTab').hidden = true; clearTimers();
-  };
+  function pick(tab) {
+    ['Menu', 'Rooms', 'Orders', 'Staff'].forEach(function (n) {
+      $('tab' + n).classList.toggle('on', n === tab); $((n.toLowerCase()) + 'Tab').hidden = n !== tab;
+    });
+    clearTimers();
+  }
+  $('tabMenu').onclick = function () { pick('Menu'); };
+  $('tabStaff').onclick = function () { pick('Staff'); bootStaff(); };
   $('tabRooms').onclick = function () {
-    $('tabRooms').classList.add('on'); $('tabMenu').classList.remove('on'); $('tabOrders').classList.remove('on');
-    $('roomsTab').hidden = false; $('menuTab').hidden = true; $('ordersTab').hidden = true; bootRooms();
+    pick('Rooms'); bootRooms();
   };
   $('tabOrders').onclick = function () {
-    $('tabOrders').classList.add('on'); $('tabMenu').classList.remove('on'); $('tabRooms').classList.remove('on');
-    $('ordersTab').hidden = false; $('menuTab').hidden = true; $('roomsTab').hidden = true; clearTimers(); bootOrders();
+    pick('Orders'); bootOrders();
+  };
+
+  // ---------- staff accounts (admin only) ----------
+  function rpc(fn, args) { return withAuth(function () { return api('/rest/v1/rpc/' + fn, { method: 'POST', body: JSON.stringify(args || {}) }); }); }
+  function bootStaff() {
+    var host = $('staffList'); host.textContent = '';
+    rpc('staff_list').then(function (rows) {
+      if (!rows || !rows.length) host.appendChild(el('div', 'muted', 'مفيش موظفين لسه. ضيف أول كاشير من فوق.'));
+      (rows || []).forEach(function (u) {
+        var card = el('div', 'room' + (u.active ? '' : ' off'));
+        var top = el('div', 'r-top');
+        var nm = el('span', 'r-name', u.username); nm.style.direction = 'ltr';
+        top.append(nm, el('span', 'r-state ' + (u.active ? 'free' : 'paused'), u.active ? 'شغّال' : 'موقوف'));
+        card.appendChild(top);
+        var pw = el('input', 'mini-in wide'); pw.type = 'password'; pw.placeholder = 'باسورد جديد (8+)'; pw.autocomplete = 'new-password'; pw.dir = 'ltr';
+        var rs = el('button', 'btn small ghost', 'غيّر الباسورد');
+        rs.onclick = function () {
+          if (pw.value.length < 8) { toast('الباسورد 8 حروف على الأقل', true); return; }
+          rs.disabled = true;
+          rpc('staff_reset_password', { p_username: u.username, p_password: pw.value })
+            .then(function () { pw.value = ''; toast('الباسورد اتغيّر وتم تسجيل خروجه'); })
+            .catch(function (e) { toast('فشل: ' + e.message, true); }).then(function () { rs.disabled = false; });
+        };
+        var row = el('div', 'r-add'); row.append(pw, rs); card.appendChild(row);
+        var tg = el('button', 'btn small ghost', u.active ? 'إيقاف الحساب' : 'تشغيل الحساب');
+        tg.onclick = function () {
+          tg.disabled = true;
+          rpc('staff_set_active', { p_username: u.username, p_active: !u.active })
+            .then(function () { toast(u.active ? 'الحساب اتوقف' : 'الحساب اشتغل'); bootStaff(); })
+            .catch(function (e) { toast('فشل: ' + e.message, true); tg.disabled = false; });
+        };
+        var dl = el('button', 'btn small ghost danger', 'حذف الحساب');
+        dl.onclick = function () {
+          if (!confirm('حذف ' + u.username + ' نهائيًا؟')) return;
+          dl.disabled = true;
+          rpc('staff_delete', { p_username: u.username })
+            .then(function () { toast('اتحذف'); bootStaff(); })
+            .catch(function (e) { toast('فشل: ' + e.message, true); dl.disabled = false; });
+        };
+        var r2 = el('div', 'r-adj'); r2.append(tg, dl); card.appendChild(r2);
+        host.appendChild(card);
+      });
+    }).catch(function (e) { toast('فشل تحميل الموظفين: ' + e.message, true); });
+  }
+  $('staffAdd').onclick = function () {
+    var u = $('staffUser').value.trim().toLowerCase(), p = $('staffPass').value;
+    if (!/^[a-z0-9._-]{3,20}$/.test(u)) { toast('اسم المستخدم: 3-20 حرف إنجليزي/أرقام', true); return; }
+    if (p.length < 8) { toast('الباسورد 8 حروف على الأقل', true); return; }
+    $('staffAdd').disabled = true;
+    rpc('staff_create', { p_username: u, p_password: p })
+      .then(function () { $('staffUser').value = ''; $('staffPass').value = ''; toast('الكاشير اتضاف'); bootStaff(); })
+      .catch(function (e) { toast('فشل: ' + e.message, true); })
+      .then(function () { $('staffAdd').disabled = false; });
   };
 
   // ---------- boot ----------
   function boot() {
     show('items');
-    Promise.all([loadMenu(), loadOverrides()])
-      .then(function (parts) { render(parts[0], parts[1]); })
+    rpc('staff_role').then(function (role) {
+      ROLE = role === 'admin' ? 'admin' : 'staff';
+      document.body.classList.toggle('role-staff', ROLE === 'staff');
+      document.body.classList.toggle('role-admin', ROLE === 'admin');
+      if (ROLE === 'staff') { pick('Rooms'); bootRooms(); return; }
+      pick('Menu');
+      return Promise.all([loadMenu(), loadOverrides()]).then(function (parts) { render(parts[0], parts[1]); });
+    })
       .catch(function (e) { toast('فشل التحميل: ' + e.message, true); if (e.status === 401) { clearSes(); show('login'); } });
   }
   if (ses && ses.access_token) {
     // cheap validity check: try a read with the token; on 401 refresh once
-    withAuth(function () { return api('/rest/v1/menu_overrides?select=item_key&limit=1'); })
+    rpc('staff_role')
       .then(boot)
       .catch(function () { clearSes(); show('login'); });
   } else show('login');

@@ -22,7 +22,7 @@
 <main id="app">
   <section id="loginView" class="card" hidden>
     <h2>دخول الأدمن</h2>
-    <label>الإيميل <input id="email" type="email" autocomplete="username" dir="ltr"></label>
+    <label>اسم المستخدم أو الإيميل <input id="email" type="text" autocomplete="username" dir="ltr" autocapitalize="off"></label>
     <label>الباسورد <input id="password" type="password" autocomplete="current-password" dir="ltr"></label>
     <div id="loginErr" class="err" hidden></div>
     <button id="loginBtn" class="btn">دخول</button>
@@ -30,9 +30,10 @@
 
   <section id="itemsView" hidden>
     <div class="tabs">
-      <button id="tabMenu" class="on">المنيو</button>
+      <button id="tabMenu" class="on adm-only">المنيو</button>
       <button id="tabRooms">غرف البلايستيشن</button>
       <button id="tabOrders">الطلبات</button>
+      <button id="tabStaff" class="adm-only">الموظفين</button>
     </div>
     <div id="menuTab">
     <div class="toolbar">
@@ -44,6 +45,18 @@
     <div id="ordersTab" hidden>
       <p class="muted">آخر الطلبات من المنيو. اطبع إيصال للزبون من هنا.</p>
       <div id="orders"></div>
+    </div>
+    <div id="staffTab" hidden>
+      <div class="room">
+        <div class="r-title">ضيف كاشير جديد</div>
+        <p class="muted small-note">الكاشير بيدخل باسم مستخدم وباسورد (مش إيميل). اكتب الباسورد هنا بنفسك، ومحدش بيشوفه بعد الحفظ.</p>
+        <div class="r-add">
+          <input id="staffUser" class="mini-in wide" placeholder="اسم المستخدم" maxlength="20" dir="ltr" autocomplete="off" autocapitalize="off">
+          <input id="staffPass" class="mini-in wide" type="password" placeholder="باسورد (8+)" dir="ltr" autocomplete="new-password">
+          <button id="staffAdd" class="btn small">إضافة</button>
+        </div>
+      </div>
+      <div id="staffList"></div>
     </div>
     <div id="roomsTab" hidden>
       <p class="muted" id="roomsHint">ابدأ جلسة لما الزبون يدخل، واقفلها لما يخلص. الحساب بالدقيقة على سعر الساعة.</p>

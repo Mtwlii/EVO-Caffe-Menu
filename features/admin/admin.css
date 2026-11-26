@@ -99,6 +99,10 @@ input:focus,select:focus{outline:0;border-color:var(--a-cyan);box-shadow:0 0 0 3
 .mini-in.wide{width:130px}
 .mini-s.grow{flex:1;min-width:140px}
 
+body.role-staff .adm-only{display:none!important}
+.room.off{opacity:.7}
+.room .r-item .btn,.room .r-add .btn,.room .r-adj .btn{width:auto}
+
 /* bill + receipt dialog */
 .bill-ov{position:fixed;inset:0;background:rgba(3,6,14,.78);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}
 .bill-box{background:var(--a-surface);border:1px solid var(--a-line2);border-radius:18px;padding:20px;width:100%;max-width:360px;box-shadow:0 24px 60px rgba(0,0,0,.5)}
