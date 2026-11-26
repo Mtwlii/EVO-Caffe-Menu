@@ -70,12 +70,14 @@ module.exports = async function (req, res) {
   // Rooms v2: an order placed from a room (type غرفة) is added to that room's
   // open session bill. No open session -> nothing happens, order is unaffected.
   var roomAttached = false;
+  // The DB only accepts this call with a secret derived from the bot token (server-side only).
+  var roomSecret = require('crypto').createHash('sha256').update('room-attach|' + token).digest('hex');
   if (type === 'غرفة' && SUPA_URL && SUPA_KEY) {
     try {
       var ar = await fetch(SUPA_URL + '/rest/v1/rpc/attach_order_to_room', {
         method: 'POST',
         headers: { apikey: SUPA_KEY, authorization: 'Bearer ' + SUPA_KEY, 'content-type': 'application/json' },
-        body: JSON.stringify({ p_code: num, p_order_id: oid, p_items: b.items.map(function (x) { return { name: s(x.name, 60), price: Number(x.price), qty: Number(x.qty) }; }) })
+        body: JSON.stringify({ p_code: num, p_order_id: oid, p_secret: roomSecret, p_items: b.items.map(function (x) { return { name: s(x.name, 60), price: Number(x.price), qty: Number(x.qty) }; }) })
       });
       roomAttached = ar.ok && (await ar.json()) === true;
     } catch (e) { roomAttached = false; }
