@@ -356,7 +356,7 @@
       var card = el('div', 'room');
       var top = el('div', 'r-top');
       top.appendChild(el('span', 'r-name', r.name + ' (' + TYPE_AR[r.room_type || 'ps4'] + ')'));
-      top.appendChild(el('span', 'r-state ' + (ses ? 'busy' : 'free'), ses ? 'مشغولة' : 'فاضية'));
+      top.appendChild(el('span', 'r-state ' + (ses ? (ses.paused_at ? 'paused' : 'busy') : 'free'), ses ? (ses.paused_at ? 'متوقفة' : 'مشغولة') : 'فاضية'));
       card.appendChild(top);
 
       // room settings (name / code / type)
