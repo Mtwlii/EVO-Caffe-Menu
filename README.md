@@ -106,7 +106,7 @@ Staff app at `/admin/` (Supabase Auth + Postgres, Vercel serverless, free tiers)
 - Offline mode: offline banner, cached rooms, closes queued in the browser and synced on reconnect with conflict handling, manual summary button, service worker (`admin/sw.js`).
 
 ### Setup
-1. Create a Supabase project, run `db/*.sql` in order in the SQL editor (001 to 016 for a new project; an existing project that has 001 to 005 needs 006 onward).
+1. Create a Supabase project, run `db/*.sql` in order in the SQL editor (easiest: `node scripts/new-client.js --admin owner@cafe.com` builds `db/all.sql` 001 to 017; see `docs/ONBOARDING.md`; an existing project that has 001 to 005 needs 006 onward).
 2. Put the project URL and publishable key in the admin config. Create the admin user in Supabase Auth and add it to `staff_emails`/roles per `007`.
 3. Vercel env vars: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`; register the Telegram webhook to the deployment you want.
 4. Never commit secrets. Passwords are typed in the panel only.
@@ -125,6 +125,7 @@ Staff app at `/admin/` (Supabase Auth + Postgres, Vercel serverless, free tiers)
 | 014_ops | staff attendance (check in/out), shift expenses deducted from expected cash, salary advances with balances, ops audit |
 | 015_inventory | stock items, moves, recipes (auto-deduct on sale, restore on void), physical count per shift, low-stock alerts |
 | 016_hardening | one open shift only, one open session per room, stopped stock items no longer deduct |
+| 017_costs_sales | timezone and business-day settings, item/stock costs, recipes by menu item id and size, takeaway/table sales (`sales`), accepted customer orders become sales, blind stock count, idempotent add/void/expense for the offline queue, `dashboard()`, `export_all()` |
 
 ### White-label settings (admin, "الإعدادات")
 Brand name, colors/theme, text direction, currency, receipt text, room types, shifts, label swaps, فردي/زوجي names, reprice mode. One client = one Supabase project + one Vercel project.
@@ -132,14 +133,18 @@ Brand name, colors/theme, text direction, currency, receipt text, room types, sh
 ### Customer menu from the database
 `index.html` keeps the static menu as a fallback. `features/data/menu-db.js` loads categories and items from Supabase (public read), renders them, caches them in localStorage (`evo-menu-cache-v1`) so the menu still opens offline after the first visit, then loads the other scripts. Admin "المنيو" tab edits categories, items (name, description, price/s, image link, hide, out of stock, featured, order). There is no print button on the customer menu (browser print still works and prints the rendered menu; receipt printing in admin is separate). Theme colors from settings (primary, accent, background, cards, text, or a preset) apply to the menu and the admin app.
 
+### Known limits (017)
+- Fallback cost is one value per menu item (recipes are per size). Accepted customer orders count as cash at the counter. Month presets in the UI use the browser clock while the dashboard uses the client timezone. The offline queue lives in one browser. Silent printing is not built in.
+
 ### Roadmap
 - Menu photos upload (today: https image links), per-item options
 - Reports by shift and cashier, CSV export
 - Done: attendance, petty expenses, salary advances (tab "الحضور والمالية")
+- Done: sales/profit dashboard (tab "التقارير"), quick takeaway/table sale (tab "بيع سريع"), costs, blind count, per-client timezone, generalized offline queue, 58mm option, shift report print, `scripts/` onboarding and backup (017)
 - Done: inventory (tab "المخزون"): recipes, auto-deduct, void restore, shift count, low-stock alerts
 - Roadmap, ranked by value for selling to many cafes:
-  1. Sales and profit dashboard (daily/monthly revenue, expenses, item cost from recipes, profit, top items, busiest hours, per-room/per-cashier)
-  2. Extend printing (80mm bill receipt exists): shift report, takeaway slip, 58mm, silent print; blind stock count
+  1. (done in 017) Sales and profit dashboard
+  2. (done in 017) Printing: shift report, takeaway slip, 58mm; silent print needs Chrome `--kiosk-printing` (documented, not in the app)
   3. Customer accounts, memberships, prepaid hours and loyalty points
   4. Multi-branch / multi-tenant (one project per client now; later branch_id plus tenant isolation) and one-click onboarding
   5. Room reservations and a waiting list

@@ -1,0 +1,25 @@
+# Daily backup. OFF until you add the 4 repository secrets below (Settings > Secrets > Actions).
+# Secrets: SUPABASE_URL, SUPABASE_ANON_KEY, BACKUP_EMAIL, BACKUP_PASSWORD.
+# The JSON is uploaded as a private workflow artifact (kept 30 days). Use a PRIVATE repo: backups hold sales data.
+name: daily-backup
+on:
+  schedule: [{ cron: '0 2 * * *' }]
+  workflow_dispatch: {}
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Backup (skipped until secrets are set)
+        run: |
+          if [ -z "$BACKUP_EMAIL" ]; then echo 'no secrets set, skipping'; exit 0; fi
+          node scripts/backup.js backups
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          BACKUP_EMAIL: ${{ secrets.BACKUP_EMAIL }}
+          BACKUP_PASSWORD: ${{ secrets.BACKUP_PASSWORD }}
+      - uses: actions/upload-artifact@v4
+        with: { name: evo-backup, path: backups/*.json, retention-days: 30, if-no-files-found: ignore }
