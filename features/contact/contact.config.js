@@ -6,6 +6,7 @@ window.EVO_CONTACT = {
   hours: '',
   phone: '',
   whatsapp: '201008533066',
+  autoOrder: false, // true once /api/order has its Telegram env vars set; WhatsApp stays the fallback
   map: 'https://maps.app.goo.gl/HLfUkRuWxDjgtP89A?g_st=ic',
   instagram: '',
   facebook: '',

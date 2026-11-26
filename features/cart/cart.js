@@ -162,21 +162,28 @@
     who.oninput = function () { info.who = who.value; save(); }; note.oninput = function () { info.note = note.value; save(); };
     send.onclick = function () {
       if (!ok()) { err.hidden = false; num.focus(); return; }
-      window.open(window.__evoOrderUrl(), '_blank', 'noopener');
-      openDone();
+      if (!(window.EVO_CONTACT || {}).autoOrder) { window.open(window.__evoOrderUrl(), '_blank', 'noopener'); openDone(false); return; }
+      send.disabled = true; send.textContent = 'جاري الإرسال...';
+      var payload = { type: info.type, num: info.num.trim(), who: info.who.trim(), note: info.note.trim(),
+        items: Object.keys(cart).map(function (k) { return { name: cart[k].name, price: cart[k].price, qty: cart[k].qty, note: cart[k].note }; }) };
+      var ctl = new AbortController(), to = setTimeout(function () { ctl.abort(); }, 10000);
+      fetch('/api/order', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload), signal: ctl.signal })
+        .then(function (r) { return r.json().then(function (j) { return r.ok && j.ok; }); })
+        .catch(function () { return false; })
+        .then(function (okSent) { clearTimeout(to); openDone(okSent ? 'auto' : 'failed'); });
     };
     nodes.push(sum, place, err, who, note, send); sync(); show(nodes);
   }
 
   // Success screen
-  function openDone() {
+  function openDone(mode) {
     var nodes = [head('جهزنا طلبك')];
     var ok = el('div', 'done-mark'); ok.innerHTML = '<svg class="ico" viewBox="0 0 24 24"><path d="M5 12.500l4.500 4.500L19 7.500"/></svg>';
     nodes.push(ok);
-    nodes.push(el('div', 'done-t', 'اضغط "إرسال" في واتساب عشان الطلب يوصل للكافيه'));
+    nodes.push(el('div', 'done-t', mode === 'auto' ? 'طلبك وصل للكافيه' : mode === 'failed' ? 'مقدرناش نبعت الطلب تلقائي. ابعته من واتساب' : 'اضغط "إرسال" في واتساب عشان الطلب يوصل للكافيه'));
     nodes.push(el('div', 'done-s', info.type + ' رقم ' + info.num.trim() + ' · ' + count() + ' صنف · ' + total() + ' ' + CUR));
-    var again = el('button', 'send', 'فتح واتساب تاني'); again.onclick = function () { window.open(window.__evoOrderUrl(), '_blank', 'noopener'); }; nodes.push(again);
-    var fin = el('button', 'clear strong', 'تم الإرسال، طلب جديد'); fin.onclick = function () { cart = {}; info.note = ''; save(); refresh(); closeSheet(); toast('الطلب اتمسح، تقدر تطلب تاني'); }; nodes.push(fin);
+    if (mode !== 'auto') { var again = el('button', 'send', mode === 'failed' ? 'ابعت على واتساب' : 'فتح واتساب تاني'); again.onclick = function () { window.open(window.__evoOrderUrl(), '_blank', 'noopener'); }; nodes.push(again); }
+    var fin = el('button', 'clear strong', mode === 'failed' ? 'بعتّه، طلب جديد' : mode === 'auto' ? 'طلب جديد' : 'تم الإرسال، طلب جديد'); fin.onclick = function () { cart = {}; info.note = ''; save(); refresh(); closeSheet(); toast('الطلب اتمسح، تقدر تطلب تاني'); }; nodes.push(fin);
     var keep = el('button', 'clear', 'رجوع للمنيو (الطلب يفضل محفوظ)'); keep.onclick = closeSheet; nodes.push(keep);
     show(nodes);
   }
