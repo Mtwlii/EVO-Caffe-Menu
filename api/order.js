@@ -7,8 +7,8 @@ var hits = {}; // best-effort per-instance rate limit: ip -> [timestamps]
 var MAX_BODY = 8000, MAX_LINES = 40, WINDOW = 60000, MAX_HITS = 5;
 
 // Public-by-design Supabase anon config (same values as features/data/data.config.js).
-var SUPA_URL = 'https://lfkhfwvxwyhhpvygtffr.supabase.co';
-var SUPA_KEY = 'sb_publishable_NHBbzyQKqZ18PNamz5q5bw_fZTHP94d';
+var SUPA_URL = process.env.SUPABASE_URL || 'https://lfkhfwvxwyhhpvygtffr.supabase.co';
+var SUPA_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_NHBbzyQKqZ18PNamz5q5bw_fZTHP94d';
 
 function s(v, n) { return String(v == null ? '' : v).replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, n); }
 function fail(res, code, msg) { res.status(code).json({ ok: false, error: msg }); }
@@ -47,9 +47,16 @@ module.exports = async function (req, res) {
     total += q * p;
     lines.push('• ' + q + ' × ' + name + ' (' + p + ') = ' + q * p + (it.note ? '\n   ملاحظة: ' + s(it.note, 80) : ''));
   }
-  var text = ['🧾 طلب جديد من منيو EVO', type + ' رقم: ' + num];
+  // brand name + currency come from the client's settings (public app_settings row)
+  var brandName = 'المنيو', cur = 'جنيه';
+  try {
+    var cr = await fetch(SUPA_URL + '/rest/v1/app_settings?key=eq.config&select=value', { headers: { apikey: SUPA_KEY, authorization: 'Bearer ' + SUPA_KEY } });
+    var cj = cr.ok ? await cr.json() : [];
+    if (cj[0] && cj[0].value) { brandName = s(cj[0].value.brand && cj[0].value.brand.name, 40) || brandName; cur = s(cj[0].value.currency, 12) || cur; }
+  } catch (e) {}
+  var text = ['🧾 طلب جديد من ' + brandName, type + ' رقم: ' + num];
   if (s(b.who, 40)) text.push('الاسم: ' + s(b.who, 40));
-  text.push('', lines.join('\n'), '', 'الإجمالي: ' + total + ' جنيه');
+  text.push('', lines.join('\n'), '', 'الإجمالي: ' + total + ' ' + cur);
   if (s(b.note, 120)) text.push('ملاحظات: ' + s(b.note, 120));
 
   // Store the order for status tracking (key-gated RPC; anon key is public by design).

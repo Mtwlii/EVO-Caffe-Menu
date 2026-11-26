@@ -1,4 +1,4 @@
-// EVO admin dashboard (milestone 1): edit prices, mark out-of-stock, hide items.
+// Admin dashboard (white-label): edit prices, mark out-of-stock, hide items.
 // Reads the live menu page as the item source, reads/writes overrides in Supabase.
 // Auth: Supabase email/password. Only a signed-in admin can write (RLS).
 (function () {
@@ -6,6 +6,59 @@
   var $ = function (id) { return document.getElementById(id); };
   if (!cfg.url || !cfg.anonKey) { $('configMsg').hidden = false; return; }
   var base = cfg.url.replace(/\/$/, '');
+
+  // ---------- white-label config (table app_settings, key 'config') ----------
+  var DEFAULTS = { brand: { name: 'Cafe', logo_url: '' }, theme: {}, dir: 'rtl', currency: 'جنيه',
+    receipt: { subtitle: 'إيصال', footer: 'شكراً لزيارتكم', extra: '' },
+    room_types: [{ id: 'ps4', label: 'PS4' }, { id: 'ps5', label: 'PS5' }], shifts: [], labels: '' };
+  var CFG = JSON.parse(JSON.stringify(DEFAULTS));
+  var SWAP = [];   // [[from, to]] phrase overrides: currency + custom labels
+  function mergeCfg(v) {
+    v = v || {};
+    CFG = { brand: Object.assign({}, DEFAULTS.brand, v.brand), theme: Object.assign({}, v.theme), dir: v.dir === 'ltr' ? 'ltr' : 'rtl',
+      currency: v.currency || DEFAULTS.currency, receipt: Object.assign({}, DEFAULTS.receipt, v.receipt),
+      room_types: (v.room_types && v.room_types.length) ? v.room_types : DEFAULTS.room_types,
+      shifts: v.shifts || [], labels: v.labels || '' };
+  }
+  function typeLabel(id) { var t = CFG.room_types.find(function (x) { return x.id === id; }); return t ? t.label : id; }
+  function typeIds() { return CFG.room_types.map(function (t) { return t.id; }); }
+  function swapText(t) { for (var i = 0; i < SWAP.length; i++) if (t.indexOf(SWAP[i][0]) >= 0) t = t.split(SWAP[i][0]).join(SWAP[i][1]); return t; }
+  var done = new WeakSet(), obs = null;
+  function swapNode(root) {
+    if (!SWAP.length) return;
+    if (obs) obs.disconnect();
+    var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), n, list = [];
+    while ((n = w.nextNode())) list.push(n);
+    list.forEach(function (t) { if (done.has(t)) return; var v = swapText(t.nodeValue); if (v !== t.nodeValue) t.nodeValue = v; done.add(t); });
+    if (root.querySelectorAll) root.querySelectorAll('[placeholder]').forEach(function (e) {
+      if (e.dataset.sw) return; e.dataset.sw = '1'; e.setAttribute('placeholder', swapText(e.getAttribute('placeholder')));
+    });
+    if (obs) obs.observe(document.body, { childList: true, subtree: true });
+  }
+  function applyCfg() {
+    var r = document.documentElement.style, th = CFG.theme || {};
+    [['primary', '--a-cyan'], ['bg', '--a-bg'], ['surface', '--a-surface'], ['text', '--a-text']].forEach(function (p) {
+      if (/^#[0-9a-f]{6}$/i.test(th[p[0]] || '')) r.setProperty(p[1], th[p[0]]); else r.removeProperty(p[1]);
+    });
+    document.documentElement.dir = CFG.dir; document.documentElement.setAttribute('data-dir', CFG.dir);
+    document.title = CFG.brand.name;
+    var meta = document.querySelector('meta[name=theme-color]'); if (meta && th.bg) meta.setAttribute('content', th.bg);
+    var bn = $('brandName'); if (bn) bn.textContent = CFG.brand.name;
+    var lg = $('brandLogo'), svg = $('brandSvg');
+    if (lg && svg) { var ok = /^https:\/\//.test(CFG.brand.logo_url || ''); lg.hidden = !ok; svg.hidden = ok; if (ok) lg.src = CFG.brand.logo_url; }
+    SWAP = [];
+    String(CFG.labels || '').split('\n').forEach(function (l) { var i = l.indexOf('=>'); if (i > 0) SWAP.push([l.slice(0, i).trim(), l.slice(i + 2).trim()]); });
+    if (CFG.currency && CFG.currency !== 'جنيه') SWAP.push(['جنيه', CFG.currency]);
+    SWAP = SWAP.filter(function (x) { return x[0]; });
+    swapNode(document.body);
+  }
+  function loadCfg() {
+    return fetch(base + '/rest/v1/app_settings?key=eq.config&select=value', { headers: { apikey: cfg.anonKey, authorization: 'Bearer ' + cfg.anonKey } })
+      .then(function (r) { return r.ok ? r.json() : []; }).then(function (rows) { mergeCfg(rows[0] && rows[0].value); applyCfg(); })
+      .catch(function () { mergeCfg(null); applyCfg(); });
+  }
+  obs = new MutationObserver(function () { swapNode(document.body); });
+  obs.observe(document.body, { childList: true, subtree: true });
 
   // ---------- session ----------
   var SES_KEY = 'evo-admin-session';
@@ -167,7 +220,7 @@
     var s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;
     return (h ? h + ':' : '') + String(m).padStart(2, '0') + ':' + String(ss).padStart(2, '0');
   }
-  var TYPE_AR = { ps4: 'فور', ps5: 'فايف' };
+  
   var RATES = {};
 
   function billModal(title, lines, extraBtn) {
@@ -191,8 +244,9 @@
   function showReceipt(data) {
     var ov = el('div', 'bill-ov'), box = el('div', 'bill-box receipt-box');
     var paper = el('div', 'receipt-paper');
-    paper.appendChild(el('div', 'rc-brand', 'EVO Café'));
-    paper.appendChild(el('div', 'rc-sub', 'إيصال'));
+    paper.appendChild(el('div', 'rc-brand', CFG.brand.name));
+    paper.appendChild(el('div', 'rc-sub', CFG.receipt.subtitle));
+    if (CFG.receipt.extra) paper.appendChild(el('div', 'rc-sub', CFG.receipt.extra));
     paper.appendChild(el('div', 'rc-place', data.place));
     (data.meta || []).forEach(function (m) { var r = el('div', 'rc-row'); r.append(el('span', null, m[0]), el('span', null, m[1])); paper.appendChild(r); });
     paper.appendChild(el('div', 'rc-sep'));
@@ -200,7 +254,7 @@
     paper.appendChild(el('div', 'rc-sep'));
     (data.totals || []).forEach(function (l) { var r = el('div', 'rc-row' + (l[2] === 'total' ? ' rc-total' : '')); r.append(el('span', null, l[0]), el('span', null, l[1])); paper.appendChild(r); });
     paper.appendChild(el('div', 'rc-sep'));
-    paper.appendChild(el('div', 'rc-thanks', 'شكراً لزيارتكم'));
+    paper.appendChild(el('div', 'rc-thanks', CFG.receipt.footer));
     box.appendChild(paper);
     var pr = el('button', 'btn', 'اطبع الإيصال');
     pr.onclick = function () { document.body.classList.add('print-receipt'); window.print(); document.body.classList.remove('print-receipt'); };
@@ -279,6 +333,7 @@
     clearTimers();
     RATES = {}; (rateRows || []).forEach(function (r) { RATES[r.room_type + '|' + r.controllers] = r.hourly_price; });
     var host = $('rooms'); host.textContent = '';
+    var dl = $('shiftNames'); if (dl) { dl.textContent = ''; CFG.shifts.forEach(function (n) { var o = el('option'); o.value = n; dl.appendChild(o); }); }
 
     // --- shift bar ---
     var shift = (openShift || [])[0] || null;
@@ -295,7 +350,7 @@
       };
       bar.appendChild(closeSh);
     } else {
-      var lbl = el('input', 'mini-in wide'); lbl.placeholder = 'اسم الوردية (صباحية / مسائية...)'; lbl.maxLength = 40;
+      var lbl = el('input', 'mini-in wide'); lbl.setAttribute('list', 'shiftNames'); lbl.placeholder = 'اسم الوردية (صباحية / مسائية...)'; lbl.maxLength = 40;
       var openSh = el('button', 'btn small', 'فتح وردية');
       openSh.onclick = function () {
         openSh.disabled = true;
@@ -325,13 +380,13 @@
     var ratesBox = el('div', 'room rates adm-only');
     ratesBox.appendChild(el('div', 'r-title', 'أسعار الساعة'));
     var rateInputs = {};
-    ['ps4', 'ps5'].forEach(function (t) {
+    typeIds().forEach(function (t) {
       [2, 4].forEach(function (c) {
         var row = el('div', 'rate-row');
-        row.appendChild(el('span', null, TYPE_AR[t] + ' · ' + c + ' إيد'));
+        row.appendChild(el('span', null, typeLabel(t) + ' · ' + c + ' إيد'));
         var inp = el('input', 'mini-in'); inp.inputMode = 'numeric';
         inp.value = RATES[t + '|' + c] != null ? RATES[t + '|' + c] : '';
-        inp.setAttribute('aria-label', 'سعر ' + TYPE_AR[t] + ' ' + c + ' إيد');
+        inp.setAttribute('aria-label', 'سعر ' + typeLabel(t) + ' ' + c + ' إيد');
         rateInputs[t + '|' + c] = inp;
         row.append(inp, el('span', 'muted', 'جنيه/ساعة'));
         ratesBox.appendChild(row);
@@ -358,7 +413,7 @@
       var ses = (open || []).find(function (x) { return x.room_id === r.id; });
       var card = el('div', 'room');
       var top = el('div', 'r-top');
-      top.appendChild(el('span', 'r-name', r.name + ' (' + TYPE_AR[r.room_type || 'ps4'] + ')'));
+      top.appendChild(el('span', 'r-name', r.name + ' (' + typeLabel(r.room_type || typeIds()[0]) + ')'));
       top.appendChild(el('span', 'r-state ' + (ses ? (ses.paused_at ? 'paused' : 'busy') : 'free'), ses ? (ses.paused_at ? 'متوقفة' : 'مشغولة') : 'فاضية'));
       card.appendChild(top);
 
@@ -367,7 +422,7 @@
       var nameIn = el('input', 'mini-in wide'); nameIn.value = r.name; nameIn.setAttribute('aria-label', 'اسم الغرفة');
       var codeIn = el('input', 'mini-in'); codeIn.value = r.code || ''; codeIn.placeholder = 'الكود'; codeIn.setAttribute('aria-label', 'كود الغرفة اللي الزبون يكتبه');
       var typeIn = el('select', 'mini-s');
-      ['ps4', 'ps5'].forEach(function (t) { var op = el('option', null, TYPE_AR[t]); op.value = t; if ((r.room_type || 'ps4') === t) op.selected = true; typeIn.appendChild(op); });
+      typeIds().forEach(function (t) { var op = el('option', null, typeLabel(t)); op.value = t; if ((r.room_type || typeIds()[0]) === t) op.selected = true; typeIn.appendChild(op); });
       var saveRoom = el('button', 'btn small ghost', 'حفظ');
       saveRoom.onclick = function () {
         saveRoom.disabled = true;
@@ -382,7 +437,7 @@
       set.append(nameIn, codeIn, typeIn, saveRoom);
       card.appendChild(set);
       card.appendChild(el('div', 'muted small-note',
-        'السعر دلوقتي: 2 إيد ' + (RATES[(r.room_type || 'ps4') + '|2'] || 0) + ' / 4 إيد ' + (RATES[(r.room_type || 'ps4') + '|4'] || 0) + ' جنيه في الساعة · كود الطلب: ' + (r.code || '—')));
+        'السعر دلوقتي: 2 إيد ' + (RATES[(r.room_type || typeIds()[0]) + '|2'] || 0) + ' / 4 إيد ' + (RATES[(r.room_type || typeIds()[0]) + '|4'] || 0) + ' جنيه في الساعة · كود الطلب: ' + (r.code || '—')));
 
       if (ses) {
         var sSegs = (segs || []).filter(function (g) { return g.session_id === ses.id; });
@@ -391,7 +446,7 @@
         var timer = el('div', 'r-timer'), bill = el('div', 'r-bill');
         var disc = adjRow('خصم'), serv = adjRow('خدمة');
         function tick() {
-          var tCost = timeCostOf(sSegs, ses.room_type || r.room_type || 'ps4');
+          var tCost = timeCostOf(sSegs, ses.room_type || r.room_type || typeIds()[0]);
           var iCost = itemsCostOf(sItems);
           var base = tCost + iCost;
           var d = adjCalc(disc.kind.value, digits(disc.val.value)[0], base);
@@ -545,7 +600,7 @@
                   if (rep.service_amount) totals.push(['الخدمة', '+ ' + rep.service_amount + ' جنيه']);
                   totals.push(['الإجمالي', rep.total + ' جنيه', 'total']);
                   if (rep.deposit) { totals.push(['مدفوع مقدم', '− ' + rep.deposit + ' جنيه']); totals.push(['الباقي', rep.remaining + ' جنيه', 'total']); }
-                  showReceipt({ place: r.name + ' (' + TYPE_AR[r.room_type || 'ps4'] + ')',
+                  showReceipt({ place: r.name + ' (' + typeLabel(r.room_type || typeIds()[0]) + ')',
                     meta: [['من', stamp(startedAt)], ['إلى', stamp(new Date(now))]], lines: lines, totals: totals });
                 };
                 return pb;
@@ -556,10 +611,10 @@
         };
         card.appendChild(close);
       } else {
-        var startRow = el('div', 'r-add');
-        var ctlSel = el('select', 'mini-s');
+        var startRow = el('div', 'r-start');
+        var ctlSel = el('select', 'mini-s r-ctl'); ctlSel.setAttribute('aria-label', 'عدد الإيدات');
         [2, 4].forEach(function (c) { var op = el('option', null, c + ' إيد'); op.value = c; ctlSel.appendChild(op); });
-        var start = el('button', 'btn small', 'بدء جلسة');
+        var start = el('button', 'btn', '▶ بدء جلسة');
         start.onclick = function () {
           start.disabled = true;
           withAuth(function () { return api('/rest/v1/rpc/start_room_session', { method: 'POST', body: JSON.stringify({ p_room_id: r.id, p_controllers: Number(ctlSel.value) }) }); })
@@ -589,7 +644,7 @@
     var nName = el('input', 'mini-in wide'); nName.placeholder = 'اسم الغرفة'; nName.maxLength = 40;
     var nCode = el('input', 'mini-in'); nCode.placeholder = 'الكود'; nCode.maxLength = 10;
     var nType = el('select', 'mini-s');
-    ['ps4', 'ps5'].forEach(function (t) { var op = el('option', null, TYPE_AR[t]); op.value = t; nType.appendChild(op); });
+    typeIds().forEach(function (t) { var op = el('option', null, typeLabel(t)); op.value = t; nType.appendChild(op); });
     var addRoom = el('button', 'btn small', 'إضافة');
     addRoom.onclick = function () {
       if (!nName.value.trim()) { toast('اكتب اسم الغرفة', true); return; }
@@ -687,18 +742,47 @@
     }).catch(function (e) { toast('فشل تحميل الطلبات: ' + e.message, true); });
   }
   function pick(tab) {
-    ['Menu', 'Rooms', 'Orders', 'Staff'].forEach(function (n) {
+    ['Menu', 'Rooms', 'Orders', 'Staff', 'Settings'].forEach(function (n) {
       $('tab' + n).classList.toggle('on', n === tab); $((n.toLowerCase()) + 'Tab').hidden = n !== tab;
     });
     clearTimers();
   }
   $('tabMenu').onclick = function () { pick('Menu'); };
+  $('tabSettings').onclick = function () { pick('Settings'); bootSettings(); };
   $('tabStaff').onclick = function () { pick('Staff'); bootStaff(); };
   $('tabRooms').onclick = function () {
     pick('Rooms'); bootRooms();
   };
   $('tabOrders').onclick = function () {
     pick('Orders'); bootOrders();
+  };
+
+  // ---------- settings (admin only) ----------
+  function bootSettings() {
+    var b = CFG.brand, t = CFG.theme || {}, rc = CFG.receipt;
+    $('sName').value = b.name; $('sLogo').value = b.logo_url || '';
+    $('sPrimary').value = t.primary || '#22d3ee'; $('sBg').value = t.bg || '#080c15'; $('sSurface').value = t.surface || '#121a2c'; $('sText').value = t.text || '#eaf0ff';
+    $('sDir').value = CFG.dir; $('sCur').value = CFG.currency;
+    $('sSub').value = rc.subtitle; $('sFoot').value = rc.footer; $('sExtra').value = rc.extra || '';
+    $('sTypes').value = CFG.room_types.map(function (x) { return x.id + '|' + x.label; }).join('\n');
+    $('sShifts').value = CFG.shifts.join('\n'); $('sLabels').value = CFG.labels || '';
+  }
+  $('sSave').onclick = function () {
+    var types = $('sTypes').value.split('\n').map(function (l) { var p = l.split('|'); return { id: (p[0] || '').trim().toLowerCase(), label: (p[1] || p[0] || '').trim() }; })
+      .filter(function (x) { return /^[a-z0-9_-]{1,20}$/.test(x.id) && x.label; });
+    if (!types.length) { toast('لازم نوع غرفة واحد على الأقل (مثال: vip|VIP)', true); return; }
+    if (/^https?:/.test($('sLogo').value.trim()) && !/^https:/.test($('sLogo').value.trim())) { toast('رابط اللوجو لازم https', true); return; }
+    var val = { brand: { name: $('sName').value.trim().slice(0, 40) || 'Cafe', logo_url: $('sLogo').value.trim() },
+      theme: { primary: $('sPrimary').value, bg: $('sBg').value, surface: $('sSurface').value, text: $('sText').value },
+      dir: $('sDir').value, currency: $('sCur').value.trim().slice(0, 12) || 'جنيه',
+      receipt: { subtitle: $('sSub').value.trim(), footer: $('sFoot').value.trim(), extra: $('sExtra').value.trim() },
+      room_types: types, shifts: $('sShifts').value.split('\n').map(function (x) { return x.trim(); }).filter(Boolean).slice(0, 12),
+      labels: $('sLabels').value.slice(0, 2000) };
+    $('sSave').disabled = true;
+    withAuth(function () { return api('/rest/v1/app_settings', { method: 'POST', headers: { prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify({ key: 'config', value: val, updated_at: new Date().toISOString() }) }); })
+      .then(function () { toast('الإعدادات اتحفظت'); setTimeout(function () { location.reload(); }, 700); })
+      .catch(function (e) { toast('فشل الحفظ: ' + e.message, true); })
+      .then(function () { $('sSave').disabled = false; });
   };
 
   // ---------- staff accounts (admin only) ----------
@@ -757,6 +841,7 @@
   // ---------- boot ----------
   function boot() {
     show('items');
+    loadCfg();
     rpc('staff_role').then(function (role) {
       ROLE = role === 'admin' ? 'admin' : 'staff';
       document.body.classList.toggle('role-staff', ROLE === 'staff');
@@ -767,6 +852,7 @@
     })
       .catch(function (e) { toast('فشل التحميل: ' + e.message, true); if (e.status === 401) { clearSes(); show('login'); } });
   }
+  loadCfg();
   if (ses && ses.access_token) {
     // cheap validity check: try a read with the token; on 401 refresh once
     rpc('staff_role')
