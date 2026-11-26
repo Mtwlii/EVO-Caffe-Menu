@@ -20,7 +20,7 @@ Note: the screenshots with the contact bar use sample contact values for the dem
 - 15 categories plus an "All" view (170 items), prices and descriptions in Arabic
 - Sticky category pills with hand-drawn SVG icons, search across all items (ignores Arabic diacritics and أ/ا, ة/ه, ى/ي)
 - "اختيارات ايفو" featured strip and a "مميز" badge, both driven by items marked as highlighted in `index.html`
-- WhatsApp ordering in two steps: review the cart (quantity and a note per item), then table or room number (required), optional name and note. A success screen follows. The Arabic message carries items, notes, name and total. Tapping an item opens a detail sheet (size, quantity, note). Nothing is stored on a server; the cart stays on the phone.
+- WhatsApp ordering in two steps: review the cart (quantity and a note per item), then table or room number (required), optional name and note. A success screen follows. Orders also go straight to a Telegram group through a small serverless function (`api/order.js`, bot token and group id kept in Vercel environment variables); if that fails the customer gets a WhatsApp button. The Arabic message carries items, notes, name and total. Tapping an item opens a detail sheet (size, quantity, note). Nothing is stored on a server; the cart stays on the phone.
 - Contact bar and footer buttons (call, WhatsApp, map, Instagram, Facebook, TikTok) that show only when a value is set in the config
 - Print mode (light, two columns) with a QR code, share preview (Open Graph)
 - Hero with slow background drift and steam animation (off for reduced-motion), no JS libraries, small page
