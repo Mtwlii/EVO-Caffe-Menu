@@ -921,13 +921,19 @@
     { n: 'بنفسجي', primary: '#818cf8', accent: '#f472b6', bg: '#0b0b1a', surface: '#15152b', text: '#eef0ff' },
     { n: 'فاتح', primary: '#0891b2', accent: '#f59e0b', bg: '#f1f5f9', surface: '#ffffff', text: '#0f172a' }
   ];
+  var themeAction = null; // null = leave the stored theme alone, 'set' = save the pickers, 'reset' = clear to the originals
   function buildPresets() {
     var host = $('sPresets'); if (!host || host.firstChild) return;
+    var rb = el('button', 'preset'); rb.type = 'button'; rb.appendChild(el('span', null, 'الألوان الأصلية'));
+    rb.style.background = 'repeating-linear-gradient(45deg,#2a2f3d 0 8px,#1b1f2b 8px 16px)';
+    rb.onclick = function () { themeAction = 'reset'; toast('هترجع ألوان المنيو والأدمن الأصلية (اضغط حفظ الإعدادات)'); };
+    host.appendChild(rb);
+    ['sPrimary', 'sAccent', 'sBg', 'sSurface', 'sText'].forEach(function (id) { $(id).addEventListener('input', function () { themeAction = 'set'; }); });
     PRESETS.forEach(function (p) {
       var b = el('button', 'preset'); b.type = 'button'; b.title = p.n;
       b.style.background = 'linear-gradient(135deg,' + p.bg + ' 0 50%,' + p.primary + ' 50% 75%,' + p.accent + ' 75%)';
       b.appendChild(el('span', null, p.n));
-      b.onclick = function () { $('sPrimary').value = p.primary; $('sAccent').value = p.accent; $('sBg').value = p.bg; $('sSurface').value = p.surface; $('sText').value = p.text; toast('اتختار: ' + p.n + ' (اضغط حفظ)'); };
+      b.onclick = function () { themeAction = 'set'; $('sPrimary').value = p.primary; $('sAccent').value = p.accent; $('sBg').value = p.bg; $('sSurface').value = p.surface; $('sText').value = p.text; toast('اتختار: ' + p.n + ' (اضغط حفظ)'); };
       host.appendChild(b);
     });
   }
@@ -950,7 +956,7 @@
   }
   function rpcGet(path) { return withAuth(function () { return api(path); }); }
   function bootSettings() {
-    buildPresets(); bootPerms();
+    buildPresets(); bootPerms(); themeAction = null;
     var b = CFG.brand, t = CFG.theme || {}, rc = CFG.receipt;
     $('sName').value = b.name; $('sLogo').value = b.logo_url || '';
     $('sPrimary').value = t.primary || '#22d3ee'; $('sAccent').value = t.accent || '#f472b6'; $('sBg').value = t.bg || '#080c15'; $('sSurface').value = t.surface || '#121a2c'; $('sText').value = t.text || '#eaf0ff';
@@ -971,7 +977,8 @@
     if (!types.length) { toast('لازم نوع غرفة واحد على الأقل (مثال: vip|VIP)', true); return; }
     if (/^https?:/.test($('sLogo').value.trim()) && !/^https:/.test($('sLogo').value.trim())) { toast('رابط اللوجو لازم https', true); return; }
     var val = { brand: { name: $('sName').value.trim().slice(0, 40) || 'Cafe', logo_url: $('sLogo').value.trim() },
-      theme: { primary: $('sPrimary').value, accent: $('sAccent').value, bg: $('sBg').value, surface: $('sSurface').value, text: $('sText').value },
+      // a theme is written ONLY when the admin picked/changed colors (or pressed reset, which clears it); otherwise the stored value is kept untouched
+      theme: themeAction === 'reset' ? {} : themeAction === 'set' ? { primary: $('sPrimary').value, accent: $('sAccent').value, bg: $('sBg').value, surface: $('sSurface').value, text: $('sText').value } : (CFG.theme || {}),
       reprice_elapsed: $('sRep').value === 'all',
       cashier_perms: CFG.perms || {},
       tiers: { '2': $('sT2').value.trim().slice(0, 20) || 'فردي', '4': $('sT4').value.trim().slice(0, 20) || 'زوجي' },
