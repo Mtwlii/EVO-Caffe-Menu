@@ -376,10 +376,7 @@
         }).then(function () { toast('الغرفة اتحفظت'); bootRooms(); })
           .catch(function (e) { toast('فشل حفظ الغرفة: ' + e.message, true); saveRoom.disabled = false; });
       };
-      var qrBtn = el('button', 'btn small ghost', 'QR');
-      qrBtn.onclick = function () { showQr(r); };
-      if (!r.code) qrBtn.disabled = true;
-      set.append(nameIn, codeIn, typeIn, saveRoom, qrBtn);
+      set.append(nameIn, codeIn, typeIn, saveRoom);
       card.appendChild(set);
       card.appendChild(el('div', 'muted small-note',
         'السعر دلوقتي: 2 إيد ' + (RATES[(r.room_type || 'ps4') + '|2'] || 0) + ' / 4 إيد ' + (RATES[(r.room_type || 'ps4') + '|4'] || 0) + ' جنيه في الساعة · كود الطلب: ' + (r.code || '—')));
@@ -605,25 +602,6 @@
     host.appendChild(addBox);
   }
 
-
-  // ---------- QR per room: opens the menu with the room already selected ----------
-  function showQr(r) {
-    var url = location.origin + '/?room=' + encodeURIComponent(r.code);
-    var ov = el('div', 'bill-ov'), box = el('div', 'bill-box qr-box');
-    box.appendChild(el('h3', null, 'QR ' + r.name));
-    var holder = el('div', 'qr-img');
-    try {
-      var q = qrcode(0, 'M'); q.addData(url); q.make();
-      holder.innerHTML = q.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
-    } catch (e) { holder.textContent = 'مقدرتش أعمل QR'; }
-    box.appendChild(holder);
-    box.appendChild(el('div', 'qr-url', url));
-    box.appendChild(el('div', 'muted small-note', 'الزبون يمسح الكود، المنيو بيفتح على ' + r.name + ' والطلب بينزل على حساب الجلسة'));
-    var pr = el('button', 'btn small ghost', 'اطبع');
-    pr.onclick = function () { document.body.classList.add('print-qr'); window.print(); document.body.classList.remove('print-qr'); };
-    var ok = el('button', 'btn', 'تم'); ok.onclick = function () { ov.remove(); };
-    box.append(pr, ok); ov.appendChild(box); document.body.appendChild(ov);
-  }
 
   // ---------- audit log ----------
   var AUDIT_AR = { start: 'بدء جلسة', close: 'إنهاء وتحصيل', item_add: 'إضافة صنف', item_void: 'إلغاء صنف', deposit: 'مقدم',

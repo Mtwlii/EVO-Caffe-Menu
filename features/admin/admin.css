@@ -115,14 +115,10 @@ input:focus { outline: 2px solid var(--brand, #f5c800); }
 .bill-sub { font-weight: 800; margin: 12px 0 4px; color: #cdbfa8; font-size: 13px; }
 .bill-box .btn { width: 100%; margin-top: 14px; }
 
-/* rooms v3: void, QR, audit */
+/* rooms v3: void, audit */
 .r-item.voided span{text-decoration:line-through;opacity:.55}
 .r-item{flex-wrap:wrap}
 .btn.danger{background:#7a1f1f;color:#fff}
-.qr-box{text-align:center}
-.qr-img{width:220px;max-width:70%;margin:10px auto;background:#fff;padding:6px;border-radius:8px}
-.qr-img svg{width:100%;height:auto;display:block}
-.qr-url{font-size:11px;direction:ltr;word-break:break-all;opacity:.8;margin-bottom:6px}
 .audit-box{max-height:80vh;overflow:auto}
 .audit-row{display:grid;grid-template-columns:52px 1fr;gap:2px 8px;padding:6px 0;border-bottom:1px dashed rgba(255,255,255,.12);font-size:13px}
 .audit-row .a-t{opacity:.7}
@@ -142,11 +138,9 @@ input:focus { outline: 2px solid var(--brand, #f5c800); }
 @page{margin:0}
 @media print{html,body{background:#fff!important}}
 @media print{
-  body.print-receipt>*:not(.bill-ov),body.print-qr>*:not(.bill-ov){display:none!important}
-  body.print-receipt .bill-ov,body.print-qr .bill-ov{position:static;background:#fff;padding:0;display:block}
-  body.print-receipt .bill-box,body.print-qr .bill-box{border:0;background:#fff;color:#000;padding:0;max-width:none;width:72mm;margin:0 auto}
+  body.print-receipt>*:not(.bill-ov){display:none!important}
+  body.print-receipt .bill-ov{position:static;background:#fff;padding:0;display:block}
+  body.print-receipt .bill-box{border:0;background:#fff;color:#000;padding:0;max-width:none;width:72mm;margin:0 auto}
   body.print-receipt .bill-box>*:not(.receipt-paper){display:none!important}
   body.print-receipt .receipt-paper{width:72mm;border-radius:0;padding:3mm 0;font-size:12px}
-  body.print-qr .bill-box button{display:none}
-  body.print-qr .bill-box{color:#000}
 }
