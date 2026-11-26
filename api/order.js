@@ -104,6 +104,7 @@ module.exports = async function (req, res) {
     var moved = j && j.parameters && j.parameters.migrate_to_chat_id;
     if (!r.ok && moved) { r = await post(moved); j = {}; try { j = await r.json(); } catch (e) {} }
     if (!r.ok) return res.status(502).json({ ok: false, error: 'telegram', code: r.status, detail: s(j.description, 80), moved: !!moved });
-    res.status(200).json({ ok: true, tracked: tracked, id: tracked ? oid : null, room_attached: roomAttached });
+    res.status(200).json({ ok: true, tracked: tracked, id: tracked ? oid : null, room_attached: roomAttached,
+      tg_message_id: j && j.result ? j.result.message_id : null, tg_chat: j && j.result && j.result.chat ? s(j.result.chat.title, 40) : null });
   } catch (e) { res.status(502).json({ ok: false, error: 'network', detail: s(e && e.message, 80) }); }
 };

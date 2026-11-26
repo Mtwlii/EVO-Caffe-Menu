@@ -167,7 +167,7 @@
   var TYPE_AR = { ps4: 'فور', ps5: 'فايف' };
   var RATES = {};
 
-  function billModal(title, lines) {
+  function billModal(title, lines, extraBtn) {
     var ov = el('div', 'bill-ov');
     var box = el('div', 'bill-box');
     box.appendChild(el('h3', null, title));
@@ -177,9 +177,36 @@
       row.append(el('span', null, ln[0]), el('span', null, ln[1]));
       box.appendChild(row);
     });
+    if (extraBtn) box.appendChild(extraBtn);
     var ok = el('button', 'btn', 'تم');
     ok.onclick = function () { ov.remove(); };
     box.appendChild(ok); ov.appendChild(box); document.body.appendChild(ov);
+  }
+
+  // ---------- receipt (80mm thermal printer, via the browser print dialog) ----------
+  // data: { place, meta:[[k,v]], lines:[[text, amount]], totals:[[label, value, 'total'?]] }
+  function showReceipt(data) {
+    var ov = el('div', 'bill-ov'), box = el('div', 'bill-box receipt-box');
+    var paper = el('div', 'receipt-paper');
+    paper.appendChild(el('div', 'rc-brand', 'EVO Café'));
+    paper.appendChild(el('div', 'rc-sub', 'إيصال'));
+    paper.appendChild(el('div', 'rc-place', data.place));
+    (data.meta || []).forEach(function (m) { var r = el('div', 'rc-row'); r.append(el('span', null, m[0]), el('span', null, m[1])); paper.appendChild(r); });
+    paper.appendChild(el('div', 'rc-sep'));
+    (data.lines || []).forEach(function (l) { var r = el('div', 'rc-row' + (l[2] === 'sub' ? ' rc-subline' : '')); r.append(el('span', null, l[0]), el('span', null, l[1])); paper.appendChild(r); });
+    paper.appendChild(el('div', 'rc-sep'));
+    (data.totals || []).forEach(function (l) { var r = el('div', 'rc-row' + (l[2] === 'total' ? ' rc-total' : '')); r.append(el('span', null, l[0]), el('span', null, l[1])); paper.appendChild(r); });
+    paper.appendChild(el('div', 'rc-sep'));
+    paper.appendChild(el('div', 'rc-thanks', 'شكراً لزيارتكم'));
+    box.appendChild(paper);
+    var pr = el('button', 'btn', 'اطبع الإيصال');
+    pr.onclick = function () { document.body.classList.add('print-receipt'); window.print(); document.body.classList.remove('print-receipt'); };
+    var ok = el('button', 'btn ghost', 'تم'); ok.onclick = function () { ov.remove(); };
+    box.append(pr, ok); ov.appendChild(box); document.body.appendChild(ov);
+  }
+  function stamp(d) {
+    d = d || new Date();
+    return d.toLocaleDateString('ar-EG') + ' ' + d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
   }
 
   function loadRooms() {
@@ -486,6 +513,8 @@
         var close = el('button', 'btn', 'إنهاء وتحصيل');
         close.onclick = function () {
           close.disabled = true;
+          var rcItems = sItems.filter(function (x) { return !x.voided_at; });
+          var rcSegs = sSegs.slice(); var startedAt = new Date(ses.started_at);
           var body = {
             p_session_id: ses.id,
             p_discount_kind: disc.kind.value || null, p_discount_value: digits(disc.val.value)[0] || 0,
@@ -501,7 +530,26 @@
                 ['الإجمالي', rep.total + ' جنيه', 'total'],
                 rep.deposit ? ['مدفوع مقدم', '− ' + rep.deposit + ' جنيه'] : null,
                 rep.deposit ? ['الباقي المطلوب', rep.remaining + ' جنيه', 'total'] : null
-              ].filter(Boolean));
+              ].filter(Boolean), (function () {
+                var pb = el('button', 'btn ghost', 'اطبع الإيصال');
+                pb.onclick = function () {
+                  var now = Date.now();
+                  var lines = [['الوقت (' + rep.minutes + ' دقيقة)', rep.time_amount + ' جنيه']];
+                  if (rcSegs.length > 1) rcSegs.forEach(function (g) {
+                    var m = Math.round(((g.ended_at ? new Date(g.ended_at).getTime() : now) - new Date(g.started_at).getTime()) / 60000);
+                    lines.push(['   ' + g.controllers + ' إيد · ' + m + ' د', '', 'sub']);
+                  });
+                  rcItems.forEach(function (x) { lines.push([x.qty + ' × ' + x.name, (x.qty * x.price) + ' جنيه']); });
+                  var totals = [['الوقت', rep.time_amount + ' جنيه'], ['الأصناف', rep.items_amount + ' جنيه']];
+                  if (rep.discount_amount) totals.push(['الخصم', '− ' + rep.discount_amount + ' جنيه']);
+                  if (rep.service_amount) totals.push(['الخدمة', '+ ' + rep.service_amount + ' جنيه']);
+                  totals.push(['الإجمالي', rep.total + ' جنيه', 'total']);
+                  if (rep.deposit) { totals.push(['مدفوع مقدم', '− ' + rep.deposit + ' جنيه']); totals.push(['الباقي', rep.remaining + ' جنيه', 'total']); }
+                  showReceipt({ place: r.name + ' (' + TYPE_AR[r.room_type || 'ps4'] + ')',
+                    meta: [['من', stamp(startedAt)], ['إلى', stamp(new Date(now))]], lines: lines, totals: totals });
+                };
+                return pb;
+              })());
               bootRooms();
             })
             .catch(function (e) { toast('فشل الإنهاء: ' + e.message, true); close.disabled = false; });
@@ -630,13 +678,44 @@
     loadRooms().then(function (p) { renderRooms(p[0] || [], p[1] || [], p[2] || [], p[3] || [], p[4] || [], p[5] || [], p[6] || []); })
       .catch(function (e) { toast('فشل تحميل الغرف: ' + e.message, true); });
   }
+
+  // ---------- orders tab: recent menu orders + receipt ----------
+  var STATUS_AR = { new: 'جديد', accepted: 'اتقبل', preparing: 'بيتحضّر', ready: 'جاهز' };
+  function bootOrders() {
+    var host = $('orders'); host.textContent = '';
+    withAuth(function () { return api('/rest/v1/orders?select=id,status,summary,created_at&order=created_at.desc&limit=30'); }).then(function (rows) {
+      if (!rows || !rows.length) { host.appendChild(el('div', 'muted', 'مفيش طلبات لسه')); return; }
+      rows.forEach(function (o) {
+        var sm = o.summary || {};
+        var card = el('div', 'room');
+        var top = el('div', 'r-top');
+        top.appendChild(el('span', 'r-name', (sm.type || '') + ' ' + (sm.num || '') + (sm.who ? ' · ' + sm.who : '')));
+        top.appendChild(el('span', 'r-state busy', STATUS_AR[o.status] || o.status));
+        card.appendChild(top);
+        card.appendChild(el('div', 'muted small-note', stamp(new Date(o.created_at)) + ' · ' + (sm.total || 0) + ' جنيه'));
+        var pb = el('button', 'btn small ghost', 'اطبع الإيصال');
+        pb.onclick = function () {
+          showReceipt({ place: (sm.type || '') + ' رقم ' + (sm.num || ''),
+            meta: [['التاريخ', stamp(new Date(o.created_at))]].concat(sm.who ? [['الاسم', sm.who]] : []),
+            lines: (sm.items || []).map(function (x) { return [x.qty + ' × ' + x.name, (x.qty * x.price) + ' جنيه']; }),
+            totals: [['الإجمالي', (sm.total || 0) + ' جنيه', 'total']] });
+        };
+        card.appendChild(pb);
+        host.appendChild(card);
+      });
+    }).catch(function (e) { toast('فشل تحميل الطلبات: ' + e.message, true); });
+  }
   $('tabMenu').onclick = function () {
-    $('tabMenu').classList.add('on'); $('tabRooms').classList.remove('on');
-    $('menuTab').hidden = false; $('roomsTab').hidden = true; clearTimers();
+    $('tabMenu').classList.add('on'); $('tabRooms').classList.remove('on'); $('tabOrders').classList.remove('on');
+    $('menuTab').hidden = false; $('roomsTab').hidden = true; $('ordersTab').hidden = true; clearTimers();
   };
   $('tabRooms').onclick = function () {
-    $('tabRooms').classList.add('on'); $('tabMenu').classList.remove('on');
-    $('roomsTab').hidden = false; $('menuTab').hidden = true; bootRooms();
+    $('tabRooms').classList.add('on'); $('tabMenu').classList.remove('on'); $('tabOrders').classList.remove('on');
+    $('roomsTab').hidden = false; $('menuTab').hidden = true; $('ordersTab').hidden = true; bootRooms();
+  };
+  $('tabOrders').onclick = function () {
+    $('tabOrders').classList.add('on'); $('tabMenu').classList.remove('on'); $('tabRooms').classList.remove('on');
+    $('ordersTab').hidden = false; $('menuTab').hidden = true; $('roomsTab').hidden = true; clearTimers(); bootOrders();
   };
 
   // ---------- boot ----------

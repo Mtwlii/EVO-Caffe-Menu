@@ -8,6 +8,10 @@ alter table public.session_items add column if not exists void_reason text;
 alter table public.session_items add column if not exists voided_by text;
 alter table public.room_sessions add column if not exists paused_at timestamptz;
 
+-- staff (signed-in admin) can read menu orders, for the orders tab and receipt printing
+drop policy if exists "orders staff read" on public.orders;
+create policy "orders staff read" on public.orders for select to authenticated using (true);
+
 -- ---------- audit log ----------
 create table if not exists public.session_audit (
   id         bigint generated always as identity primary key,
