@@ -21,7 +21,7 @@
       shifts: v.shifts || [], labels: v.labels || '', reprice: v.reprice_elapsed !== false, expenseCap: v.expense_cap != null ? Number(v.expense_cap) : 500, tiers: Object.assign({ '2': 'فردي', '4': 'زوجي' }, v.tiers), perms: Object.assign({}, v.cashier_perms) };
   }
   var PERMS = [['start', 'بدء جلسة'], ['pause', 'إيقاف مؤقت / استكمال'], ['tier', 'تحويل فردي/زوجي'], ['vip', 'تفعيل/إلغاء VIP'], ['void', 'إلغاء صنف (بسبب)'],
-    ['add_items', 'إضافة أصناف للجلسة'], ['deposit', 'تسجيل مقدم'], ['carry_over', 'نقل للوردية الجاية'], ['close', 'إنهاء وتحصيل الجلسة'], ['shift', 'فتح/قفل الوردية'], ['attendance', 'تسجيل حضور/انصراف'], ['expense', 'تسجيل مصروف'], ['advance', 'تسجيل سلفة (افتراضي: مقفول)']];
+    ['add_items', 'إضافة أصناف للجلسة'], ['deposit', 'تسجيل مقدم'], ['carry_over', 'نقل للوردية الجاية'], ['close', 'إنهاء وتحصيل الجلسة'], ['shift', 'فتح/قفل الوردية'], ['attendance', 'تسجيل حضور/انصراف'], ['expense', 'تسجيل مصروف'], ['advance', 'تسجيل سلفة (افتراضي: مقفول)'], ['stock_move', 'وارد/صادر/هالك مخزون'], ['stock_count', 'جرد المخزون']];
   function can(p) { return ROLE === 'admin' || (p === 'advance' ? (CFG.perms || {})[p] === true : (CFG.perms || {})[p] !== false); }
   function gate(node, p) { if (!can(p)) { node.disabled = true; node.title = 'الأدمن قفل الصلاحية دي'; node.classList.add('perm-off'); } return node; }
   function typeLabel(id) { var t = CFG.room_types.find(function (x) { return x.id === id; }); return t ? t.label : id; }
@@ -852,6 +852,10 @@
       ['مقدمات استلمتها الوردية', (rep.deposits_received || 0) + ' جنيه'],
       ['باقي الفواتير المتقفلة', (rep.collected_at_close != null ? rep.collected_at_close : rep.total) + ' جنيه']
     ];
+    (rep.stock_counts || []).forEach(function (c, i) {
+      if (!i) lines.push(['جرد المخزون (المتوقع / الفعلي):', '', 'sub']);
+      lines.push([c.item, c.expected + ' / ' + c.actual + ' ' + c.unit + (Number(c.diff) ? ' · فرق ' + c.diff : ' · مظبوط')]);
+    });
     if (rep.expenses != null) {
       lines.push(['مصروفات الوردية', '− ' + rep.expenses + ' جنيه']);
       (rep.expenses_list || []).forEach(function (x, i) {
@@ -868,6 +872,7 @@
   }
 
   function bootRooms() {
+    lowBadge();
     loadRooms().then(function (p) { renderRooms(p[0] || [], p[1] || [], p[2] || [], p[3] || [], p[4] || [], p[5] || [], p[6] || []); })
       .catch(function (e) {
         var c = null; try { c = JSON.parse(localStorage.getItem(C_KEY) || 'null'); } catch (x) {}
@@ -906,7 +911,7 @@
     }).catch(function (e) { toast('فشل تحميل الطلبات: ' + e.message, true); });
   }
   function pick(tab) {
-    ['Menu', 'Rooms', 'Orders', 'Ops', 'Staff', 'Settings'].forEach(function (n) {
+    ['Menu', 'Rooms', 'Orders', 'Ops', 'Stock', 'Staff', 'Settings'].forEach(function (n) {
       $('tab' + n).classList.toggle('on', n === tab); $((n.toLowerCase()) + 'Tab').hidden = n !== tab;
     });
     clearTimers();
@@ -915,6 +920,7 @@
   $('tabSettings').onclick = function () { pick('Settings'); bootSettings(); };
   $('tabStaff').onclick = function () { pick('Staff'); bootStaff(); };
   $('tabOps').onclick = function () { pick('Ops'); bootOps(); };
+  $('tabStock').onclick = function () { pick('Stock'); bootStock(); };
   $('tabRooms').onclick = function () {
     pick('Rooms'); bootRooms();
   };
@@ -935,6 +941,123 @@
   }
   function monthRange(v) { var p = v.split('-'), a = new Date(Number(p[0]), Number(p[1]) - 1, 1), b = new Date(Number(p[0]), Number(p[1]), 1); return [a.toISOString(), b.toISOString()]; }
   function sec(host, title) { var b = el('div', 'room ops-sec'); b.appendChild(el('div', 'r-title', title)); host.appendChild(b); return b; }
+
+  // ---------- inventory ----------
+  function num(v) { var n = Number(String(v).replace(/[٠-٩]/g, function (d) { return d.charCodeAt(0) - 1632; }).replace(',', '.')); return isFinite(n) ? n : NaN; }
+  function fq(n) { return String(Math.round(Number(n) * 1000) / 1000); }
+  function lowBadge() {
+    rpcGet('/rest/v1/stock_items?select=qty,min_level&active=eq.true').then(function (r) {
+      var n = (r || []).filter(function (x) { return Number(x.qty) <= Number(x.min_level) && Number(x.min_level) > 0; }).length;
+      $('tabStock').textContent = 'المخزون' + (n ? ' ⚠ ' + n : '');
+    }).catch(function () {});
+  }
+  function bootStock() {
+    var host = $('stockTab'); host.textContent = '';
+    var admin = ROLE === 'admin';
+    var secI = sec(host, 'المخزون'), secR = admin ? sec(host, 'الوصفات (خصم تلقائي عند البيع)') : null, secM = admin ? sec(host, 'سجل الحركات') : null;
+    var items = [];
+    function load() {
+      lowBadge();
+      rpcGet('/rest/v1/stock_items?select=*&order=name').then(function (rows) { items = rows || []; drawItems(); if (admin) { drawRecipes(); drawMoves(); } })
+        .catch(function (e) { secI.appendChild(el('div', 'muted', 'تعذر التحميل: ' + e.message)); });
+    }
+    function fresh(s) { s.querySelectorAll('.ops-body').forEach(function (n) { n.remove(); }); var b = el('div', 'ops-body'); s.appendChild(b); return b; }
+    function drawItems() {
+      var body = fresh(secI), act = items.filter(function (i) { return i.active; });
+      var low = act.filter(function (i) { return Number(i.min_level) > 0 && Number(i.qty) <= Number(i.min_level); });
+      if (low.length) body.appendChild(el('div', 'bill-row total', '⚠ تحت الحد الأدنى: ' + low.map(function (i) { return i.name + ' (' + fq(i.qty) + ' ' + i.unit + ')'; }).join('، ')));
+      var cnt = {};
+      act.forEach(function (i) {
+        var isLow = low.indexOf(i) >= 0;
+        var row = el('div', 'row' + (isLow ? ' oos' : ''));
+        row.appendChild(el('div', 'cur', i.name + ' · الحد الأدنى ' + fq(i.min_level) + ' ' + i.unit));
+        row.appendChild(el('div', 'name', fq(i.qty) + ' ' + i.unit));
+        var q = el('input', 'price-in'); q.inputMode = 'decimal'; q.placeholder = 'الكمية';
+        var nt = el('input', 'm-in'); nt.placeholder = 'سبب (للصادر/الهالك)'; nt.maxLength = 80;
+        var bi = el('button', 'btn small', 'وارد'), bo = el('button', 'btn small ghost', 'صادر'), bw = el('button', 'btn small ghost danger', 'هالك');
+        [bi, bo, bw].forEach(function (b) { gate(b, 'stock_move'); });
+        var mv = function (kind) { return function () { var v = num(q.value); if (!(v > 0)) { toast('اكتب الكمية', true); return; }
+          rpc('stock_move', { p_item: i.id, p_qty: v, p_kind: kind, p_note: nt.value }).then(function () { toast('اتسجل'); load(); }).catch(function (e) { toast('فشل: ' + e.message, true); }); }; };
+        bi.onclick = mv('in'); bo.onclick = mv('out'); bw.onclick = mv('waste');
+        row.append(q, nt, bi, bo, bw);
+        if (admin) {
+          var ed = el('button', 'btn small ghost', 'تعديل');
+          ed.onclick = function () { var n = prompt('الاسم', i.name); if (!n) return; var u = prompt('الوحدة', i.unit); var m = prompt('الحد الأدنى', i.min_level); if (m == null) return;
+            rpc('stock_item_save', { p_id: i.id, p_name: n, p_unit: u, p_min: num(m) || 0, p_active: true }).then(function () { toast('اتعدل'); load(); }).catch(function (e) { toast('فشل: ' + e.message, true); }); };
+          var ar = el('button', 'btn small ghost danger', 'إيقاف');
+          ar.onclick = function () { if (!confirm('إيقاف ' + i.name + '؟ الوصفات المرتبطة هتفضل لكن مش هتتحسب.')) return;
+            rpc('stock_item_save', { p_id: i.id, p_name: i.name, p_unit: i.unit, p_min: i.min_level, p_active: false }).then(load).catch(function (e) { toast('فشل: ' + e.message, true); }); };
+          row.append(ed, ar);
+        }
+        cnt[i.id] = el('input', 'price-in'); cnt[i.id].inputMode = 'decimal'; cnt[i.id].placeholder = 'الفعلي';
+        body.appendChild(row);
+      });
+      if (!act.length) body.appendChild(el('div', 'muted', 'مفيش أصناف مخزون لسه'));
+      if (admin) {
+        var f = el('div', 'row'); f.appendChild(el('div', 'cur', 'صنف مخزون جديد'));
+        var n = el('input', 'm-in'); n.placeholder = 'الاسم (مثال: لبن)'; n.maxLength = 80;
+        var u = el('input', 'mini-in'); u.placeholder = 'الوحدة'; u.maxLength = 20;
+        var m = el('input', 'price-in'); m.placeholder = 'الحد الأدنى'; m.inputMode = 'decimal';
+        var b = el('button', 'btn small', 'إضافة');
+        b.onclick = function () { if (!n.value.trim()) return; rpc('stock_item_save', { p_id: null, p_name: n.value, p_unit: u.value, p_min: num(m.value) || 0, p_active: true }).then(function () { toast('اتضاف'); load(); }).catch(function (e) { toast('فشل: ' + e.message, true); }); };
+        f.append(n, u, m, b); body.appendChild(f);
+      }
+      // physical count (جرد), tied to the open shift
+      var cb = el('div', 'ops-emp'); cb.appendChild(el('div', 'name', 'جرد فعلي عند قفل الوردية (اكتب الكمية الموجودة فعلاً)'));
+      act.forEach(function (i) { var r = el('div', 'row'); r.appendChild(el('div', 'cur', i.name + ' (' + i.unit + ')')); r.appendChild(cnt[i.id]); cb.appendChild(r); });
+      var go = el('button', 'btn small', 'سجّل الجرد'); gate(go, 'stock_count');
+      go.onclick = function () {
+        var lines = act.filter(function (i) { return cnt[i.id].value.trim() !== ''; }).map(function (i) { return { item_id: i.id, actual: num(cnt[i.id].value) }; });
+        if (!lines.length || lines.some(function (l) { return !(l.actual >= 0); })) { toast('اكتب الكميات الفعلية', true); return; }
+        go.disabled = true;
+        rpc('stock_count', { p_counts: lines, p_note: '' }).then(function (res) {
+          var by = {}; items.forEach(function (i) { by[i.id] = i; });
+          billModal('نتيجة الجرد', res.map(function (r) { var d = Number(r.diff); return [by[r.item_id].name, 'المتوقع ' + fq(r.expected) + ' · الفعلي ' + fq(r.actual) + (d ? ' · فرق ' + (d > 0 ? '+' : '') + fq(d) : ' · مظبوط'), d ? 'sub' : '']; }));
+          load();
+        }).catch(function (e) { toast('فشل: ' + e.message, true); go.disabled = false; });
+      };
+      cb.appendChild(go); if (act.length) body.appendChild(cb);
+    }
+    function drawRecipes() {
+      var body = fresh(secR), act = items.filter(function (i) { return i.active; });
+      rpcGet('/rest/v1/recipes?select=*&order=menu_name').then(function (rs) {
+        var by = {}; (rs || []).forEach(function (r) { (by[r.menu_name] = by[r.menu_name] || []).push(r); });
+        var nm = {}; items.forEach(function (i) { nm[i.id] = i; });
+        Object.keys(by).forEach(function (mn) {
+          var row = el('div', 'row'); row.appendChild(el('div', 'cur', mn + ' ← ' + by[mn].map(function (r) { return fq(r.qty) + ' ' + (nm[r.item_id] ? nm[r.item_id].unit + ' ' + nm[r.item_id].name : '?'); }).join(' + ')));
+          var rm = el('button', 'btn small ghost danger', 'حذف'); rm.onclick = function () { rpc('recipe_set', { p_menu_name: mn, p_lines: [] }).then(drawRecipes).catch(function (e) { toast('فشل: ' + e.message, true); }); };
+          row.appendChild(rm); body.appendChild(row);
+        });
+        if (!rs || !rs.length) body.appendChild(el('div', 'muted', 'مفيش وصفات. اربط صنف المنيو بمكوناته من المخزون.'));
+        if (!act.length) return;
+        var f = el('div', 'row'); f.appendChild(el('div', 'cur', 'وصفة لصنف (الاسم زي ما بيظهر في الفاتورة)'));
+        var dl = el('datalist'); dl.id = 'recNames'; var seen = {};
+        menuChoices().forEach(function (c) { if (!seen[c.name]) { seen[c.name] = 1; var o = el('option'); o.value = c.name; dl.appendChild(o); } });
+        var n = el('input', 'm-in'); n.setAttribute('list', 'recNames'); n.placeholder = 'صنف المنيو';
+        var si = el('select', 'mini-s'); act.forEach(function (i) { var o = el('option', null, i.name + ' (' + i.unit + ')'); o.value = i.id; si.appendChild(o); });
+        var q = el('input', 'price-in'); q.inputMode = 'decimal'; q.placeholder = 'الكمية للوحدة';
+        var b = el('button', 'btn small', 'أضف مكون');
+        b.onclick = function () { var v = num(q.value), name = n.value.trim(); if (!name || !(v > 0)) { toast('الصنف والكمية مطلوبين', true); return; }
+          var lines = (by[name] || []).filter(function (r) { return String(r.item_id) !== si.value; }).map(function (r) { return { item_id: r.item_id, qty: Number(r.qty) }; });
+          lines.push({ item_id: Number(si.value), qty: v });
+          rpc('recipe_set', { p_menu_name: name, p_lines: lines }).then(function () { toast('اتحفظت الوصفة'); drawRecipes(); }).catch(function (e) { toast('فشل: ' + e.message, true); }); };
+        f.append(n, dl, si, q, b); body.appendChild(f);
+      });
+    }
+    function drawMoves() {
+      var body = fresh(secM), nm = {}; items.forEach(function (i) { nm[i.id] = i; });
+      var K = { 'in': 'وارد', out: 'صادر', waste: 'هالك', sale: 'بيع', void_restore: 'استرجاع (إلغاء)', count: 'تسوية جرد', adjust: 'تعديل' };
+      rpcGet('/rest/v1/stock_moves?select=*&order=id.desc&limit=40').then(function (rows) {
+        (rows || []).forEach(function (m) { var i = nm[m.item_id] || { name: '?', unit: '' };
+          body.appendChild(el('div', 'cur', fmtT(m.at) + ' · ' + K[m.kind] + ' · ' + i.name + ' ' + (Number(m.delta) > 0 ? '+' : '') + fq(m.delta) + ' ' + i.unit + ' · ' + who(m.actor) + (m.note ? ' · ' + m.note : ''))); });
+        if (!rows || !rows.length) body.appendChild(el('div', 'muted', 'مفيش حركات'));
+        var ex = el('button', 'btn small ghost', 'تصدير CSV');
+        ex.onclick = function () { csvDown('stock-moves.csv', [['الوقت', 'النوع', 'الصنف', 'الكمية', 'بواسطة', 'ملاحظة']].concat((rows || []).map(function (m) { return [m.at, K[m.kind], (nm[m.item_id] || {}).name, m.delta, who(m.actor), m.note]; }))); };
+        body.appendChild(ex);
+      });
+    }
+    load();
+  }
   function bootOps() {
     var host = $('opsTab'); host.textContent = '';
     var admin = ROLE === 'admin', me = myEmail();
