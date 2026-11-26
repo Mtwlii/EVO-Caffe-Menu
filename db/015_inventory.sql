@@ -192,3 +192,6 @@ returns jsonb language sql security definer set search_path = public as $$
 $$;
 revoke all on function public.shift_totals(smallint) from public, anon;
 grant execute on function public.shift_totals(smallint) to authenticated;
+
+-- tables are read-only for clients; all writes go through the functions above
+revoke insert, update, delete, truncate on public.stock_items, public.stock_moves, public.recipes, public.stock_counts from anon, authenticated;
