@@ -45,7 +45,7 @@ module.exports = async function (req, res) {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ chat_id: chat, text: text.join('\n') })
     });
-    if (!r.ok) return fail(res, 502, 'telegram');
+    if (!r.ok) { var j = {}; try { j = await r.json(); } catch (e) {} return res.status(502).json({ ok: false, error: 'telegram', code: r.status, detail: s(j.description, 80) }); }
     res.status(200).json({ ok: true });
-  } catch (e) { fail(res, 502, 'telegram'); }
+  } catch (e) { res.status(502).json({ ok: false, error: 'network', detail: s(e && e.message, 80) }); }
 };
