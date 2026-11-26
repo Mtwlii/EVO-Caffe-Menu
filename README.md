@@ -94,3 +94,37 @@ Setup notes for the owner:
 2. Put the project URL + anon key in `features/data/data.config.js` and in `api/order.js` / `api/telegram.js` (`SUPA_URL` / `SUPA_KEY`). The anon key is public by design; RLS and the per-order key protect the data.
 3. Create the admin user in Supabase Authentication (email + password). Its password lives in the password vault.
 4. Register the Telegram webhook once: `https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://<this-deployment>/api/telegram` (re-point to the production URL after merging).
+
+## Admin, rooms and billing (branch `scale-up`)
+Staff app at `/admin/` (Supabase Auth + Postgres, Vercel serverless, free tiers).
+
+### Features
+- Roles: admin (full) and cashier/staff (rooms, sessions, items, void with a required reason). Staff sign in with a username; admin creates, disables, resets and deletes staff from the "الموظفين" tab.
+- Room cards: start row with rate selector, live timer and total, pause/resume, switch فردي/زوجي, VIP checkbox, add items, close bill, receipt. Billing is by the exact minute (no rounding, no minimum).
+- VIP: separate hourly price matrix (room type x فردي/زوجي), editable by admin. Can be ticked mid-session. Setting "reprice elapsed time on change": whole session at the new price (default) or new price from now on (new segment). The same rule applies to فردي/زوجي changes. Every change is audited with the actor and old/new totals.
+- Audit log of voids, price changes, VIP and controller switches. Orders from the customer menu post to Telegram.
+- Offline mode: offline banner, cached rooms, closes queued in the browser and synced on reconnect with conflict handling, manual summary button, service worker (`admin/sw.js`).
+
+### Setup
+1. Create a Supabase project, run `db/*.sql` in order in the SQL editor (001 to 011 for a new project; an existing project that has 001 to 005 needs 006 onward).
+2. Put the project URL and publishable key in the admin config. Create the admin user in Supabase Auth and add it to `staff_emails`/roles per `007`.
+3. Vercel env vars: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`; register the Telegram webhook to the deployment you want.
+4. Never commit secrets. Passwords are typed in the panel only.
+
+### Migrations from 006
+| File | Adds |
+|---|---|
+| 006_staff_lock | locks tables to staff only |
+| 007_staff_roles | admin/staff roles, staff management functions |
+| 008_settings | white-label `app_settings` (brand, theme, direction, currency, receipt, room types, shifts, labels) |
+| 009_offline_close | `close_room_session` with client end time |
+| 010_vip | VIP rates, segments and rooms; `set_session_vip` |
+| 011_reprice | reprice mode setting, `session_time_cost`, totals in audit |
+
+### White-label settings (admin, "الإعدادات")
+Brand name, colors/theme, text direction, currency, receipt text, room types, shifts, label swaps, فردي/زوجي names, reprice mode. One client = one Supabase project + one Vercel project.
+
+### Roadmap
+- DB-driven customer menu (items, categories, images, prices, hide/out-of-stock) editable from admin
+- Reports by shift and cashier, CSV export
+- Multi-branch option

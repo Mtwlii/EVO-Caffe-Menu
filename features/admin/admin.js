@@ -10,7 +10,7 @@
   // ---------- white-label config (table app_settings, key 'config') ----------
   var DEFAULTS = { brand: { name: 'Cafe', logo_url: '' }, theme: {}, dir: 'rtl', currency: 'جنيه',
     receipt: { subtitle: 'إيصال', footer: 'شكراً لزيارتكم', extra: '' },
-    room_types: [{ id: 'ps4', label: 'PS4' }, { id: 'ps5', label: 'PS5' }], shifts: [], labels: '', tiers: { '2': 'فردي', '4': 'زوجي' } };
+    room_types: [{ id: 'ps4', label: 'PS4' }, { id: 'ps5', label: 'PS5' }], shifts: [], labels: '', reprice: true, tiers: { '2': 'فردي', '4': 'زوجي' } };
   var CFG = JSON.parse(JSON.stringify(DEFAULTS));
   var SWAP = [];   // [[from, to]] phrase overrides: currency + custom labels
   function mergeCfg(v) {
@@ -18,7 +18,7 @@
     CFG = { brand: Object.assign({}, DEFAULTS.brand, v.brand), theme: Object.assign({}, v.theme), dir: v.dir === 'ltr' ? 'ltr' : 'rtl',
       currency: v.currency || DEFAULTS.currency, receipt: Object.assign({}, DEFAULTS.receipt, v.receipt),
       room_types: (v.room_types && v.room_types.length) ? v.room_types : DEFAULTS.room_types,
-      shifts: v.shifts || [], labels: v.labels || '', tiers: Object.assign({ '2': 'فردي', '4': 'زوجي' }, v.tiers) };
+      shifts: v.shifts || [], labels: v.labels || '', reprice: v.reprice_elapsed !== false, tiers: Object.assign({ '2': 'فردي', '4': 'زوجي' }, v.tiers) };
   }
   function typeLabel(id) { var t = CFG.room_types.find(function (x) { return x.id === id; }); return t ? t.label : id; }
   function tierLabel(c) { return (CFG.tiers && CFG.tiers[c]) || String(c); }
@@ -354,12 +354,16 @@
     });
   }
 
+  // same algorithm as session_time_cost in the DB: newest to oldest; a segment is billed at the next
+  // segment's controllers/vip when that change repriced the past (reprices_prior), else at its own
   function timeCostOf(segs, type, until) {
-    var cost = 0;
-    (segs || []).forEach(function (g) {
+    var cost = 0, ec = null, ev = false, prevRp = false, list = (segs || []).slice().sort(function (a, b) { return b.id - a.id; });
+    list.forEach(function (g, i) {
+      if (i === 0 || !prevRp) { ec = g.controllers; ev = !!g.vip; }
       var end = g.ended_at ? new Date(g.ended_at).getTime() : (until || Date.now());
       var mins = Math.max(0, (end - new Date(g.started_at).getTime()) / 60000);
-      cost += mins / 60 * (RATES[rkey(type, g.controllers, g.vip)] || 0);
+      cost += mins / 60 * (RATES[rkey(type, ec, ev)] || 0);
+      prevRp = !!g.reprices_prior;
     });
     return cost;
   }
@@ -496,7 +500,7 @@
       vipC.onchange = function () {
         var want = vipC.checked; vipC.disabled = true;
         var call = ses ? rpc('set_session_vip', { p_session_id: ses.id, p_vip: want }) : rpc('set_room_vip', { p_room_id: r.id, p_vip: want });
-        call.then(function () { toast(want ? 'VIP شغّال من دلوقتي' : 'VIP اتقفل من دلوقتي'); bootRooms(); })
+        call.then(function () { toast((want ? 'VIP شغّال' : 'VIP اتقفل') + (ses ? ' · الإجمالي اتحدّث' : '')); bootRooms(); })
           .catch(function (e) { toast('فشل تغيير VIP: ' + (e.offline ? 'محتاج نت' : e.message), true); vipC.checked = !want; vipC.disabled = false; });
       };
       card.appendChild(vipL);
@@ -766,6 +770,7 @@
   // ---------- audit log ----------
   var AUDIT_AR = { start: 'بدء جلسة', close: 'إنهاء وتحصيل', item_add: 'إضافة صنف', item_void: 'إلغاء صنف', deposit: 'مقدم',
     carry_over: 'نقل للوردية الجاية', pause: 'إيقاف مؤقت', resume: 'استئناف', controllers: 'تغيير فردي/زوجي', vip: 'تغيير VIP' };
+  function totalsTxt(d) { return d.total_before != null ? ' · الإجمالي ' + d.total_before + ' ← ' + d.total_after + ' (' + (d.mode === 'from_now' ? 'من دلوقتي' : 'الجلسة كلها') + ')' : ''; }
   function auditText(a) {
     var d = a.detail || {};
     switch (a.action) {
@@ -773,8 +778,8 @@
       case 'item_void': return d.qty + ' × ' + d.name + ' · السبب: ' + (d.reason || '');
       case 'deposit': return d.amount + ' جنيه';
       case 'close': return 'الإجمالي ' + d.total + (d.discount ? ' · خصم ' + d.discount : '') + (d.service ? ' · خدمة ' + d.service : '');
-      case 'controllers': return tierLabel(d.from) + ' ← ' + tierLabel(d.to);
-      case 'vip': return (d.from ? 'VIP' : 'عادي') + ' ← ' + (d.to ? 'VIP' : 'عادي');
+      case 'controllers': return tierLabel(d.from) + ' ← ' + tierLabel(d.to) + totalsTxt(d);
+      case 'vip': return (d.from ? 'VIP' : 'عادي') + ' ← ' + (d.to ? 'VIP' : 'عادي') + totalsTxt(d);
       default: return '';
     }
   }
@@ -872,7 +877,7 @@
     var b = CFG.brand, t = CFG.theme || {}, rc = CFG.receipt;
     $('sName').value = b.name; $('sLogo').value = b.logo_url || '';
     $('sPrimary').value = t.primary || '#22d3ee'; $('sBg').value = t.bg || '#080c15'; $('sSurface').value = t.surface || '#121a2c'; $('sText').value = t.text || '#eaf0ff';
-    $('sT2').value = tierLabel(2); $('sT4').value = tierLabel(4); $('sDir').value = CFG.dir; $('sCur').value = CFG.currency;
+    $('sRep').value = CFG.reprice ? 'all' : 'from_now'; $('sT2').value = tierLabel(2); $('sT4').value = tierLabel(4); $('sDir').value = CFG.dir; $('sCur').value = CFG.currency;
     $('sSub').value = rc.subtitle; $('sFoot').value = rc.footer; $('sExtra').value = rc.extra || '';
     $('sTypes').value = CFG.room_types.map(function (x) { return x.id + '|' + x.label; }).join('\n');
     $('sShifts').value = CFG.shifts.join('\n'); $('sLabels').value = CFG.labels || '';
@@ -884,6 +889,7 @@
     if (/^https?:/.test($('sLogo').value.trim()) && !/^https:/.test($('sLogo').value.trim())) { toast('رابط اللوجو لازم https', true); return; }
     var val = { brand: { name: $('sName').value.trim().slice(0, 40) || 'Cafe', logo_url: $('sLogo').value.trim() },
       theme: { primary: $('sPrimary').value, bg: $('sBg').value, surface: $('sSurface').value, text: $('sText').value },
+      reprice_elapsed: $('sRep').value === 'all',
       tiers: { '2': $('sT2').value.trim().slice(0, 20) || 'فردي', '4': $('sT4').value.trim().slice(0, 20) || 'زوجي' },
       dir: $('sDir').value, currency: $('sCur').value.trim().slice(0, 12) || 'جنيه',
       receipt: { subtitle: $('sSub').value.trim(), footer: $('sFoot').value.trim(), extra: $('sExtra').value.trim() },
