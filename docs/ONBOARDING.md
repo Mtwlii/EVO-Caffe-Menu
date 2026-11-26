@@ -35,11 +35,13 @@ Open `/admin/`, sign in as the owner, then:
 Open a shift, start/close a room, make a takeaway sale, print a receipt and a shift report, place a customer order, close the shift, check the Reports tab. Then clear test data (SQL editor: delete from sales, session tables, shifts, orders, stock tables) and confirm the menu look is unchanged.
 
 ## 7. Daily backup
-`scripts/backup.js` exports every business table to JSON using the admin-only `export_all()` function. Make a dedicated admin account for it. Either run it from any machine's cron:
-```
-SUPABASE_URL=... SUPABASE_ANON_KEY=... BACKUP_EMAIL=... BACKUP_PASSWORD=... node scripts/backup.js /path/to/backups
-```
-or set the 4 secrets in a PRIVATE GitHub repo; copy `docs/backup-workflow.yml` to `.github/workflows/backup.yml` (the deploy token here has no workflow scope) and it runs daily, keeping artifacts 30 days. The admin Reports tab also has a manual "full backup" button. Supabase free tier has no point-in-time backup, so test a restore once.
+`scripts/backup.js` exports every business table to JSON using the admin-only `export_all()` function, through a dedicated admin account (never your own).
+
+**Live setup (EVO):** a PRIVATE repo `Mtwlii/evo-backups` runs `.github/workflows/backup.yml` every day at 01:17 UTC (about 03:17 Cairo) and commits `backups/evo-backup-YYYY-MM-DD.json`; the last 30 files are kept. It uses 4 repo secrets: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `BACKUP_EMAIL` (`evo-backup@staff.evo.invalid`), `BACKUP_PASSWORD`. If you change that account's password in the Staff tab, update the `BACKUP_PASSWORD` secret too. The daily call also counts as activity, which helps the free project avoid pausing. To run it now: repo, Actions tab, daily-backup, Run workflow.
+
+**New client:** create a private repo, copy `docs/backup-workflow.yml` to `.github/workflows/backup.yml`, add the 4 secrets, and add a staff account with role admin. Or run from any machine's cron: `SUPABASE_URL=... SUPABASE_ANON_KEY=... BACKUP_EMAIL=... BACKUP_PASSWORD=... node scripts/backup.js /path/to/backups`. The admin Reports tab also has a manual "full backup" button.
+
+**Restore:** apply migrations 001 to 017 to a fresh or emptied project, then run `node scripts/restore-sql.js evo-backup-YYYY-MM-DD.json > restore.sql` and paste restore.sql into the Supabase SQL editor (it inserts in foreign-key order inside one transaction). Notes: the export leaves out order edit keys, so restored orders get fresh ones. Staff login accounts live in Supabase Auth and are not in the backup: recreate cashiers from the Staff tab (the `staff_emails` rows come back, but passwords do not). Tested: restoring a real backup into a scratch schema gave identical row counts for every table with data.
 
 ## Printing
 - Receipts, takeaway slips and shift reports print through the browser print dialog at 80mm; set `receipt width` to 58 in Settings for 58mm paper.
