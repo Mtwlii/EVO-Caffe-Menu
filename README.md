@@ -78,3 +78,13 @@ Longer term
 - [ ] Small admin page so the owner edits prices and availability from his phone
 - [ ] Online ordering with payment (Instapay or card) and order status for the customer
 - [ ] Reusable template to sell the same menu and ordering system to other cafes
+
+## Scale-up (branch `scale-up`)
+
+Building on a separate branch; `main` and the live site stay untouched. Preview deploy comes from Vercel automatically.
+
+- [x] Milestone 1 code: admin dashboard (`/admin`) to edit prices and mark items out of stock or hidden; overrides stored in Supabase (`db/001_menu_overrides.sql`), applied on the menu at load (`features/data/`). Static menu keeps working if the backend is unreachable.
+- [ ] Milestone 2: customer-visible order status (accepted / preparing / ready), updated by staff from Telegram inline buttons.
+- [ ] Milestone 3: PS room booking with live timer and price calculation.
+
+Setup notes for the owner: see `db/` (SQL to run once in Supabase) and `features/data/data.config.js` (project URL + anon key). The admin login is a Supabase user; its password lives in the password vault.

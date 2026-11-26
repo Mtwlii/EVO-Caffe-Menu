@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#17100b">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<title>لوحة التحكم — EVO Café</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../features/admin/admin.css">
+</head>
+<body>
+<header class="adm-head">
+  <h1>لوحة تحكم EVO</h1>
+  <button id="logout" class="btn ghost" hidden>خروج</button>
+</header>
+
+<main id="app">
+  <section id="loginView" class="card" hidden>
+    <h2>دخول الأدمن</h2>
+    <label>الإيميل <input id="email" type="email" autocomplete="username" dir="ltr"></label>
+    <label>الباسورد <input id="password" type="password" autocomplete="current-password" dir="ltr"></label>
+    <div id="loginErr" class="err" hidden></div>
+    <button id="loginBtn" class="btn">دخول</button>
+  </section>
+
+  <section id="itemsView" hidden>
+    <div class="toolbar">
+      <input id="q" type="search" placeholder="ابحث عن صنف...">
+      <span id="count" class="muted"></span>
+    </div>
+    <div id="groups"></div>
+  </section>
+
+  <section id="configMsg" class="card" hidden>
+    <h2>الإعداد ناقص</h2>
+    <p>لم يتم ضبط بيانات الاتصال بقاعدة البيانات بعد (features/data/data.config.js).</p>
+  </section>
+</main>
+
+<div id="toast" class="toast" hidden></div>
+<script src="../features/data/data.config.js"></script>
+<script src="../features/admin/admin.js"></script>
+</body>
+</html>

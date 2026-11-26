@@ -203,5 +203,7 @@
     if (!n && !sheet.hidden && body.querySelector('.sheet-lines')) closeSheet();
   }
   bar.onclick = openCart;
-  decorate(); refresh();
+  // Wait for menu overrides (prices, out-of-stock) before decorating, when the
+  // data layer is configured; otherwise decorate immediately as before.
+  (window.__evoDataReady || Promise.resolve()).then(function () { decorate(); refresh(); });
 })();
