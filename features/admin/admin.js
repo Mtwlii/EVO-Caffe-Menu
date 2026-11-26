@@ -1530,7 +1530,7 @@
   function chips(boxId, taId, presets, parse, fmt) {
     var box = $(boxId), ta = $(taId); if (!box || !ta) return;
     var cur = ta.value.split('\n').map(function (l) { return l.trim(); }).filter(Boolean).map(parse);
-    var all = presets.slice();
+    var all = presets.map(function (p) { return cur.filter(function (c) { return c.k === p.k; })[0] || p; });
     cur.forEach(function (c) { if (!all.some(function (a) { return a.k === c.k; })) all.push(c); });
     box.textContent = '';
     all.forEach(function (a) {
