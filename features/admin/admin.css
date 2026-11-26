@@ -54,8 +54,8 @@ input:focus,select:focus{outline:0;border-color:var(--a-cyan);box-shadow:0 0 0 3
 .toast{position:fixed;bottom:18px;inset-inline:16px;margin:0 auto;max-width:400px;background:#14532d;border:1px solid var(--a-green);color:#eafff1;text-align:center;padding:11px;border-radius:var(--a-r-s);font-size:14px;z-index:90}
 .toast.bad{background:#4c1219;border-color:var(--a-red);color:#ffe8ea}
 [hidden]{display:none!important}
-.tabs{display:flex;gap:6px;margin-bottom:18px;padding:5px;background:var(--a-bg2);border:1px solid var(--a-line);border-radius:14px}
-.tabs button{flex:1;font-family:inherit;font-size:14px;font-weight:800;padding:10px;border-radius:10px;cursor:pointer;background:transparent;color:var(--a-soft);border:0;transition:background .2s var(--a-ease),color .2s;min-height:42px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px;padding:5px;background:var(--a-bg2);border:1px solid var(--a-line);border-radius:14px}
+.tabs button{flex:1 1 auto;font-family:inherit;font-size:14px;font-weight:800;padding:10px;border-radius:10px;cursor:pointer;background:transparent;color:var(--a-soft);border:0;transition:background .2s var(--a-ease),color .2s;min-height:42px}
 .tabs button:hover{color:var(--a-text)}
 .tabs button.on{background:var(--a-cyan);color:#04141a}
 
