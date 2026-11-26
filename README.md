@@ -106,7 +106,7 @@ Staff app at `/admin/` (Supabase Auth + Postgres, Vercel serverless, free tiers)
 - Offline mode: offline banner, cached rooms, closes queued in the browser and synced on reconnect with conflict handling, manual summary button, service worker (`admin/sw.js`).
 
 ### Setup
-1. Create a Supabase project, run `db/*.sql` in order in the SQL editor (001 to 015 for a new project; an existing project that has 001 to 005 needs 006 onward).
+1. Create a Supabase project, run `db/*.sql` in order in the SQL editor (001 to 016 for a new project; an existing project that has 001 to 005 needs 006 onward).
 2. Put the project URL and publishable key in the admin config. Create the admin user in Supabase Auth and add it to `staff_emails`/roles per `007`.
 3. Vercel env vars: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`; register the Telegram webhook to the deployment you want.
 4. Never commit secrets. Passwords are typed in the panel only.
@@ -124,6 +124,7 @@ Staff app at `/admin/` (Supabase Auth + Postgres, Vercel serverless, free tiers)
 | 013_cashier_perms | per-action cashier permissions (`staff_can`, `set_cashier_perms`), permission audit table |
 | 014_ops | staff attendance (check in/out), shift expenses deducted from expected cash, salary advances with balances, ops audit |
 | 015_inventory | stock items, moves, recipes (auto-deduct on sale, restore on void), physical count per shift, low-stock alerts |
+| 016_hardening | one open shift only, one open session per room, stopped stock items no longer deduct |
 
 ### White-label settings (admin, "الإعدادات")
 Brand name, colors/theme, text direction, currency, receipt text, room types, shifts, label swaps, فردي/زوجي names, reprice mode. One client = one Supabase project + one Vercel project.
@@ -136,5 +137,13 @@ Brand name, colors/theme, text direction, currency, receipt text, room types, sh
 - Reports by shift and cashier, CSV export
 - Done: attendance, petty expenses, salary advances (tab "الحضور والمالية")
 - Done: inventory (tab "المخزون"): recipes, auto-deduct, void restore, shift count, low-stock alerts
-- Next: Telegram low-stock push, per-item cost and stock value report
+- Roadmap, ranked by value for selling to many cafes:
+  1. Sales and profit dashboard (daily/monthly revenue, expenses, item cost from recipes, profit, top items, busiest hours, per-room/per-cashier)
+  2. Receipts and print formats (58/80mm thermal, bill and shift report), blind stock count
+  3. Customer accounts, memberships, prepaid hours and loyalty points
+  4. Multi-branch / multi-tenant (one project per client now; later branch_id plus tenant isolation) and one-click onboarding
+  5. Room reservations and a waiting list
+  6. Kitchen/bar display and order notifications; Telegram low-stock push
+  7. Scheduled backups and full data export; English/Arabic language switch; SaaS billing and subscription management
+  8. Payroll (salary, auto-deduct advances) and supplier purchasing
 - Multi-branch option
