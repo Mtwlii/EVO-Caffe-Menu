@@ -70,7 +70,7 @@ PROJECT.md                  الملف ده
 
 ### Environment Variables على Vercel (الأسماء بس)
 - `TELEGRAM_BOT_TOKEN`: توكن البوت @evoOrders_bot (من BotFather). سرّي.
-- `TELEGRAM_CHAT_ID`: رقم جروب "EVO Oredrs" (رقم سالب). مش سرّي بس مهم.
+- `TELEGRAM_CHAT_ID`: رقم جروب (حاليًا الـ supergroup) "EVO Oredrs" (رقم سالب). مش سرّي بس مهم.
 
 بعد أي تغيير في الـ Environment Variables لازم **Redeploy** عشان يتطبق.
 المكان: Vercel > المشروع evo-caffe-menu > Settings > Environment Variables.
@@ -79,6 +79,7 @@ PROJECT.md                  الملف ده
 - **سعر أو صنف:** عدّل القسم في `index.html` مرة واحدة (تبويب "الكل" بيتحدث لوحده).
 - **ألوان:** `shared/tokens.css`.
 - **صور الأقسام:** حط الصور في `assets/photos/` وسجّلها في `features/menu/photos.config.js`.
+- **لو الجروب اتحوّل Supergroup:** رقمه بيتغير (بيبقى -100...). الـ API بيتعامل مع ده لوحده (بيجرب الرقم الجديد اللي تليجرام بيقوله) لكن حدّث `TELEGRAM_CHAT_ID` برضه. حصل ده فعلًا يوم 26 نوفمبر: الرقم بقى -1005866232053.
 - **تغيير جروب الاستلام:** غيّر `TELEGRAM_CHAT_ID` وعمل Redeploy. لو غيرت البوت: توكن جديد من BotFather في `TELEGRAM_BOT_TOKEN`.
 - **إضافة حد للجروب (كاشير):** من تليجرام ضيفه للجروب. مفيش تغيير في الكود.
 

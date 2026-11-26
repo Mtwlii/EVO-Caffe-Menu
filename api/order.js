@@ -40,12 +40,19 @@ module.exports = async function (req, res) {
   text.push('', lines.join('\n'), '', 'الإجمالي: ' + total + ' جنيه');
   if (s(b.note, 120)) text.push('ملاحظات: ' + s(b.note, 120));
 
-  try {
-    var r = await fetch('https://api.telegram.org/bot' + token + '/sendMessage', {
+  async function post(id) {
+    return fetch('https://api.telegram.org/bot' + token + '/sendMessage', {
       method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ chat_id: chat, text: text.join('\n') })
+      body: JSON.stringify({ chat_id: id, text: text.join('\n') })
     });
-    if (!r.ok) { var j = {}; try { j = await r.json(); } catch (e) {} return res.status(502).json({ ok: false, error: 'telegram', code: r.status, detail: s(j.description, 80) }); }
+  }
+  try {
+    var r = await post(chat), j = {};
+    try { j = await r.json(); } catch (e) {}
+    // A group upgraded to a supergroup gets a new id. Telegram tells us the new one: retry once with it.
+    var moved = j && j.parameters && j.parameters.migrate_to_chat_id;
+    if (!r.ok && moved) { r = await post(moved); j = {}; try { j = await r.json(); } catch (e) {} }
+    if (!r.ok) return res.status(502).json({ ok: false, error: 'telegram', code: r.status, detail: s(j.description, 80), moved: !!moved });
     res.status(200).json({ ok: true });
   } catch (e) { res.status(502).json({ ok: false, error: 'network', detail: s(e && e.message, 80) }); }
 };
