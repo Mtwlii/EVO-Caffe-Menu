@@ -116,7 +116,7 @@ begin
   update staff_emails set active = p_active where email = em and role = 'staff';
   if not found then raise exception 'no such staff user'; end if;
   select id into uid from auth.users where email = em;
-  update auth.users set banned_until = case when p_active then null else 'infinity'::timestamptz end where id = uid;
+  update auth.users set banned_until = case when p_active then null else '2999-01-01'::timestamptz end where id = uid;
   if not p_active then
     delete from auth.refresh_tokens where user_id = uid::text;
     delete from auth.sessions where user_id = uid;
