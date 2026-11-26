@@ -35,8 +35,10 @@
       <button id="tabMenu" class="on adm-only">المنيو</button>
       <button id="tabRooms">غرف البلايستيشن</button>
       <button id="tabOrders">الطلبات</button>
+      <button id="tabSale">بيع سريع</button>
       <button id="tabOps">الحضور والمالية</button>
       <button id="tabStock">المخزون</button>
+      <button id="tabDash" class="adm-only">التقارير</button>
       <button id="tabStaff" class="adm-only">الموظفين</button>
       <button id="tabSettings" class="adm-only">الإعدادات</button>
     </div>
@@ -79,6 +81,10 @@
         <p class="muted small-note">التليجرام: توكن البوت بيتحط في إعدادات النشر (Vercel) مش هنا، لأنه سر. باقي الإعدادات هنا بتتحفظ في قاعدة البيانات.</p>
         <div class="r-title" style="margin-top:18px">صلاحيات الكاشير</div>
         <p class="muted">اقفل أو افتح كل إجراء للكاشير. الأدمن دايماً مسموح له. بتتطبق من السيرفر على طول وكل تغيير بيتسجل.</p>
+        <label>المنطقة الزمنية للتقارير (IANA مثل Africa/Cairo) <input id="sTz" list="tzList" maxlength="40"></label>
+        <datalist id="tzList"><option value="Africa/Cairo"><option value="Asia/Riyadh"><option value="Asia/Dubai"><option value="Asia/Kuwait"><option value="Asia/Baghdad"><option value="Africa/Casablanca"><option value="Africa/Tunis"><option value="Europe/Istanbul"><option value="Europe/London"><option value="UTC"></datalist>
+        <label>اليوم التجاري يبدأ الساعة (0-12). مبيعات بعد منتصف الليل تتحسب على اليوم اللي قبله <input id="sDayStart" inputmode="numeric" maxlength="2"></label>
+        <label>عرض ورق الطباعة <select id="sRcW"><option value="80">80 مم</option><option value="58">58 مم</option></select></label>
         <label>أقصى مبلغ مصروف للكاشير في المرة (0 = بدون حد) <input id="sExpCap" inputmode="numeric" maxlength="6"></label>
         <div id="sPerms" class="perms"></div>
         <button id="sPermSave" class="btn small" type="button">حفظ الصلاحيات</button>
@@ -86,6 +92,8 @@
         <button id="sSave" class="btn">حفظ الإعدادات</button>
       </div>
     </div>
+    <div id="saleTab" hidden></div>
+    <div id="dashTab" hidden></div>
     <div id="opsTab" hidden></div>
     <div id="stockTab" hidden></div>
     <div id="staffTab" hidden>

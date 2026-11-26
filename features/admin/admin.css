@@ -172,3 +172,17 @@ textarea{font-family:inherit;font-size:14px;padding:10px 12px;border-radius:var(
 .perm-hist{margin:10px 0 16px}
 .perm-off{opacity:.45;cursor:not-allowed}
 .ops-sec{margin-bottom:16px}.ops-emp{margin:10px 0;padding:8px 10px;border:1px solid var(--a-line);border-radius:12px}.ops-emp .name{font-weight:700;margin-bottom:6px}.mini-in{padding:7px 8px;min-width:140px}
+
+/* receipt 58mm option */
+.receipt-paper.w58{max-width:230px;margin:0 auto;font-size:12px}
+@media print{body.print-receipt .receipt-paper.w58{width:48mm;font-size:11px}}
+/* dashboard */
+.dash-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:8px 0}
+.dash-card{background:var(--surface,#161b2e);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px}
+.dash-card.hi{border-color:#2bd4ee}
+.dash-k{font-size:12px;opacity:.7}.dash-v{font-size:18px;font-weight:700;margin-top:4px}
+.dash-t{display:flex;flex-direction:column;gap:2px;margin:6px 0 12px}
+.dash-r{position:relative;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px;padding:6px 8px;font-size:13px;border-bottom:1px solid rgba(255,255,255,.06);overflow:hidden}
+.dash-h{font-weight:700;opacity:.8}
+.dash-bar{position:absolute;inset-inline-start:0;bottom:0;height:3px;background:#2bd4ee;opacity:.7}
+.ob-c{margin-inline-start:8px}
