@@ -99,14 +99,14 @@ Setup notes for the owner:
 Staff app at `/admin/` (Supabase Auth + Postgres, Vercel serverless, free tiers).
 
 ### Features
-- Roles: admin (full) and cashier/staff (rooms, sessions, items, void with a required reason). Staff sign in with a username; admin creates, disables, resets and deletes staff from the "الموظفين" tab.
+- Roles: admin (full) and cashier/staff (rooms, sessions, items, void with a required reason). Cashier permissions: Settings > "صلاحيات الكاشير" turns each cashier action on/off (start session, pause/resume, switch فردي/زوجي, VIP, void, add items, deposit, carry over to next shift, close and bill, open/close shift). Enforced in the database (RPC guards and an RLS policy), buttons are disabled in the UI, every change is recorded in `settings_audit` with who changed it. Default: everything allowed. Staff sign in with a username; admin creates, disables, resets and deletes staff from the "الموظفين" tab.
 - Room cards: start row with rate selector, live timer and total, pause/resume, switch فردي/زوجي, VIP checkbox, add items, close bill, receipt. Billing is by the exact minute (no rounding, no minimum).
 - VIP: separate hourly price matrix (room type x فردي/زوجي), editable by admin. Can be ticked mid-session. Setting "reprice elapsed time on change": whole session at the new price (default) or new price from now on (new segment). The same rule applies to فردي/زوجي changes. Every change is audited with the actor and old/new totals.
 - Audit log of voids, price changes, VIP and controller switches. Orders from the customer menu post to Telegram.
 - Offline mode: offline banner, cached rooms, closes queued in the browser and synced on reconnect with conflict handling, manual summary button, service worker (`admin/sw.js`).
 
 ### Setup
-1. Create a Supabase project, run `db/*.sql` in order in the SQL editor (001 to 012 for a new project; an existing project that has 001 to 005 needs 006 onward).
+1. Create a Supabase project, run `db/*.sql` in order in the SQL editor (001 to 013 for a new project; an existing project that has 001 to 005 needs 006 onward).
 2. Put the project URL and publishable key in the admin config. Create the admin user in Supabase Auth and add it to `staff_emails`/roles per `007`.
 3. Vercel env vars: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`; register the Telegram webhook to the deployment you want.
 4. Never commit secrets. Passwords are typed in the panel only.
@@ -121,12 +121,13 @@ Staff app at `/admin/` (Supabase Auth + Postgres, Vercel serverless, free tiers)
 | 010_vip | VIP rates, segments and rooms; `set_session_vip` |
 | 011_reprice | reprice mode setting, `session_time_cost`, totals in audit |
 | 012_menu | customer menu tables (`menu_categories`, `menu_items`), seeded from the static page, public read, admin write |
+| 013_cashier_perms | per-action cashier permissions (`staff_can`, `set_cashier_perms`), permission audit table |
 
 ### White-label settings (admin, "الإعدادات")
 Brand name, colors/theme, text direction, currency, receipt text, room types, shifts, label swaps, فردي/زوجي names, reprice mode. One client = one Supabase project + one Vercel project.
 
 ### Customer menu from the database
-`index.html` keeps the static menu as a fallback. `features/data/menu-db.js` loads categories and items from Supabase (public read), renders them, caches them in localStorage (`evo-menu-cache-v1`) so the menu still opens offline after the first visit, then loads the other scripts. Admin "المنيو" tab edits categories, items (name, description, price/s, image link, hide, out of stock, featured, order). The print button ("تحميل المنيو PDF / طباعة") prints the rendered menu, so the PDF always matches the database. Theme colors from settings (primary, accent, background, cards, text, or a preset) apply to the menu and the admin app.
+`index.html` keeps the static menu as a fallback. `features/data/menu-db.js` loads categories and items from Supabase (public read), renders them, caches them in localStorage (`evo-menu-cache-v1`) so the menu still opens offline after the first visit, then loads the other scripts. Admin "المنيو" tab edits categories, items (name, description, price/s, image link, hide, out of stock, featured, order). There is no print button on the customer menu (browser print still works and prints the rendered menu; receipt printing in admin is separate). Theme colors from settings (primary, accent, background, cards, text, or a preset) apply to the menu and the admin app.
 
 ### Roadmap
 - Menu photos upload (today: https image links), per-item options

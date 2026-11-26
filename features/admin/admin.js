@@ -18,8 +18,12 @@
     CFG = { brand: Object.assign({}, DEFAULTS.brand, v.brand), theme: Object.assign({}, v.theme), dir: v.dir === 'ltr' ? 'ltr' : 'rtl',
       currency: v.currency || DEFAULTS.currency, receipt: Object.assign({}, DEFAULTS.receipt, v.receipt),
       room_types: (v.room_types && v.room_types.length) ? v.room_types : DEFAULTS.room_types,
-      shifts: v.shifts || [], labels: v.labels || '', reprice: v.reprice_elapsed !== false, tiers: Object.assign({ '2': 'فردي', '4': 'زوجي' }, v.tiers) };
+      shifts: v.shifts || [], labels: v.labels || '', reprice: v.reprice_elapsed !== false, tiers: Object.assign({ '2': 'فردي', '4': 'زوجي' }, v.tiers), perms: Object.assign({}, v.cashier_perms) };
   }
+  var PERMS = [['start', 'بدء جلسة'], ['pause', 'إيقاف مؤقت / استكمال'], ['tier', 'تحويل فردي/زوجي'], ['vip', 'تفعيل/إلغاء VIP'], ['void', 'إلغاء صنف (بسبب)'],
+    ['add_items', 'إضافة أصناف للجلسة'], ['deposit', 'تسجيل مقدم'], ['carry_over', 'نقل للوردية الجاية'], ['close', 'إنهاء وتحصيل الجلسة'], ['shift', 'فتح/قفل الوردية']];
+  function can(p) { return ROLE === 'admin' || (CFG.perms || {})[p] !== false; }
+  function gate(node, p) { if (!can(p)) { node.disabled = true; node.title = 'الأدمن قفل الصلاحية دي'; node.classList.add('perm-off'); } return node; }
   function typeLabel(id) { var t = CFG.room_types.find(function (x) { return x.id === id; }); return t ? t.label : id; }
   function tierLabel(c) { return (CFG.tiers && CFG.tiers[c]) || String(c); }
   function rkey(t, c, vip) { return t + '|' + c + (vip ? '|v' : ''); }
@@ -446,7 +450,7 @@
     if (shift) {
       bar.appendChild(el('span', 'shift-on', 'وردية مفتوحة: ' + (shift.label || ('#' + shift.id)) +
         ' · من ' + new Date(shift.opened_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })));
-      var closeSh = el('button', 'btn small warn', 'قفل الوردية');
+      var closeSh = el('button', 'btn small warn', 'قفل الوردية'); gate(closeSh, 'shift');
       closeSh.onclick = function () {
         closeSh.disabled = true;
         withAuth(function () { return api('/rest/v1/rpc/close_shift', { method: 'POST', body: '{}' }); })
@@ -456,7 +460,7 @@
       bar.appendChild(closeSh);
     } else {
       var lbl = el('input', 'mini-in wide'); lbl.setAttribute('list', 'shiftNames'); lbl.placeholder = 'اسم الوردية (صباحية / مسائية...)'; lbl.maxLength = 40;
-      var openSh = el('button', 'btn small', 'فتح وردية');
+      var openSh = el('button', 'btn small', 'فتح وردية'); gate(openSh, 'shift');
       openSh.onclick = function () {
         openSh.disabled = true;
         withAuth(function () { return api('/rest/v1/rpc/open_shift', { method: 'POST', body: JSON.stringify({ p_label: lbl.value.trim() }) }); })
@@ -531,6 +535,7 @@
       var vipL = el('label', 'chk r-vipchk'), vipC = el('input'); vipC.type = 'checkbox'; vipC.checked = isVip;
       vipC.setAttribute('aria-label', 'VIP ' + r.name);
       vipL.append(vipC, document.createTextNode('VIP'));
+      if (!can('vip')) { vipC.disabled = true; vipL.title = 'الأدمن قفل الصلاحية دي'; }
       if (ses && ses.paused_at) { vipC.disabled = true; vipL.title = 'كمّل الجلسة الأول'; }
       vipC.onchange = function () {
         var want = vipC.checked; vipC.disabled = true;
@@ -586,7 +591,7 @@
         card.append(timer, bill);
 
         // controller switch
-        var sw = el('button', 'btn small ghost', 'حوّل لـ ' + tierLabel(openSeg && openSeg.controllers === 2 ? 4 : 2));
+        var sw = el('button', 'btn small ghost', 'حوّل لـ ' + tierLabel(openSeg && openSeg.controllers === 2 ? 4 : 2)); gate(sw, 'tier');
         sw.onclick = function () {
           sw.disabled = true;
           var to = openSeg && openSeg.controllers === 2 ? 4 : 2;
@@ -598,7 +603,7 @@
         card.appendChild(sw);
 
         // pause / resume (no time billed while paused)
-        var pz = el('button', 'btn small ghost', ses.paused_at ? 'كمّل الجلسة ▶' : 'إيقاف مؤقت ⏸');
+        var pz = el('button', 'btn small ghost', ses.paused_at ? 'كمّل الجلسة ▶' : 'إيقاف مؤقت ⏸'); gate(pz, 'pause');
         pz.onclick = function () {
           pz.disabled = true;
           var fn = ses.paused_at ? 'resume_session' : 'pause_session';
@@ -612,7 +617,7 @@
         var depRow = el('div', 'r-add');
         var depIn = el('input', 'mini-in'); depIn.inputMode = 'numeric'; depIn.placeholder = 'مقدم';
         depIn.value = ses.deposit_amount || ''; depIn.setAttribute('aria-label', 'الدفع المقدم');
-        var depBtn = el('button', 'btn small ghost', 'سجّل المقدم');
+        var depBtn = el('button', 'btn small ghost', 'سجّل المقدم'); gate(depBtn, 'deposit');
         depBtn.onclick = function () {
           var v = digits(depIn.value)[0] || 0;
           depBtn.disabled = true;
@@ -624,7 +629,7 @@
         card.appendChild(depRow);
 
         // explicit carry-over to next shift
-        var carry = el('button', 'btn small ghost', ses.carried_over ? 'هينتقل للوردية الجاية ✓' : 'نقل للوردية الجاية');
+        var carry = el('button', 'btn small ghost', ses.carried_over ? 'هينتقل للوردية الجاية ✓' : 'نقل للوردية الجاية'); gate(carry, 'carry_over');
         if (ses.carried_over) carry.disabled = true;
         carry.onclick = function () {
           carry.disabled = true;
@@ -641,7 +646,7 @@
           row.appendChild(el('span', null, x.qty + ' × ' + x.name + ' = ' + (x.qty * x.price) + ' جنيه' + (x.source === 'order' ? ' (من المنيو)' : '') +
             (x.voided_at ? ' · ملغي: ' + (x.void_reason || '') + (x.voided_by ? ' (بواسطة ' + String(x.voided_by).split('@')[0] + ')' : '') : '')));
           if (!x.voided_at) {
-            var del = el('button', 'btn small ghost danger', 'إلغاء');
+            var del = el('button', 'btn small ghost danger', 'إلغاء'); gate(del, 'void');
             del.onclick = function () {
               del.hidden = true;
               var why = el('input', 'mini-in wide'); why.placeholder = 'سبب الإلغاء (مطلوب)'; why.maxLength = 120; why.setAttribute('aria-label', 'سبب الإلغاء');
@@ -669,7 +674,7 @@
         menuChoices().forEach(function (c, i) { var op = el('option', null, c.name + ' — ' + c.price); op.value = i; sel.appendChild(op); });
         var choices = menuChoices();
         var qty = el('input', 'mini-in'); qty.inputMode = 'numeric'; qty.value = '1'; qty.setAttribute('aria-label', 'العدد');
-        var add = el('button', 'btn small', 'ضيف');
+        var add = el('button', 'btn small', 'ضيف'); gate(add, 'add_items');
         add.onclick = function () {
           var c = choices[Number(sel.value)]; var q = digits(qty.value)[0] || 1;
           if (!c) return;
@@ -688,7 +693,7 @@
         adjBox.append(disc.kind, disc.val, serv.kind, serv.val);
         card.appendChild(adjBox);
 
-        var close = el('button', 'btn', 'إنهاء وتحصيل');
+        var close = el('button', 'btn', 'إنهاء وتحصيل'); gate(close, 'close');
         close.onclick = function () {
           close.disabled = true;
           var rcItems = sItems.filter(function (x) { return !x.voided_at; });
@@ -754,7 +759,7 @@
         var startRow = el('div', 'r-start');
         var ctlSel = el('select', 'mini-s r-ctl'); ctlSel.setAttribute('aria-label', 'فردي / زوجي');
         [2, 4].forEach(function (c) { var op = el('option', null, tierLabel(c)); op.value = c; ctlSel.appendChild(op); });
-        var start = el('button', 'btn', '▶ بدء جلسة');
+        var start = el('button', 'btn', '▶ بدء جلسة'); gate(start, 'start');
         start.onclick = function () {
           if (OFFLINE) { toast('بدء جلسة جديدة محتاج نت. اكتب وقت البداية على ورقة', true); return; }
           start.disabled = true;
@@ -926,8 +931,26 @@
       host.appendChild(b);
     });
   }
+  function bootPerms() {
+    var host = $('sPerms'); if (!host) return; host.textContent = '';
+    PERMS.forEach(function (p) {
+      var L = el('label', 'chk perm-row'), c = el('input'); c.type = 'checkbox'; c.dataset.perm = p[0]; c.checked = (CFG.perms || {})[p[0]] !== false;
+      L.append(c, document.createTextNode(p[1])); host.appendChild(L);
+    });
+    var hist = $('sPermHist'); if (hist) {
+      rpcGet('/rest/v1/settings_audit?select=at,actor,detail&order=id.desc&limit=8').then(function (rows) {
+        hist.textContent = '';
+        (rows || []).forEach(function (r) {
+          var f = r.detail.from || {}, t = r.detail.to || {}, ch = [];
+          PERMS.forEach(function (p) { var a = f[p[0]] !== false, b = t[p[0]] !== false; if (a !== b) ch.push(p[1] + (b ? ' ✓' : ' ✗')); });
+          hist.appendChild(el('div', 'cur', new Date(r.at).toLocaleString('ar-EG') + ' · ' + String(r.actor).split('@')[0] + ' · ' + (ch.join('، ') || 'بدون تغيير')));
+        });
+      }).catch(function () {});
+    }
+  }
+  function rpcGet(path) { return withAuth(function () { return api(path); }); }
   function bootSettings() {
-    buildPresets();
+    buildPresets(); bootPerms();
     var b = CFG.brand, t = CFG.theme || {}, rc = CFG.receipt;
     $('sName').value = b.name; $('sLogo').value = b.logo_url || '';
     $('sPrimary').value = t.primary || '#22d3ee'; $('sAccent').value = t.accent || '#f472b6'; $('sBg').value = t.bg || '#080c15'; $('sSurface').value = t.surface || '#121a2c'; $('sText').value = t.text || '#eaf0ff';
@@ -936,6 +959,12 @@
     $('sTypes').value = CFG.room_types.map(function (x) { return x.id + '|' + x.label; }).join('\n');
     $('sShifts').value = CFG.shifts.join('\n'); $('sLabels').value = CFG.labels || '';
   }
+  $('sPermSave').onclick = function () {
+    var o = {}; document.querySelectorAll('#sPerms input[data-perm]').forEach(function (c) { o[c.dataset.perm] = c.checked; });
+    $('sPermSave').disabled = true;
+    rpc('set_cashier_perms', { p: o }).then(function () { CFG.perms = o; toast('صلاحيات الكاشير اتحفظت'); bootPerms(); })
+      .catch(function (e) { toast('فشل: ' + e.message, true); }).then(function () { $('sPermSave').disabled = false; });
+  };
   $('sSave').onclick = function () {
     var types = $('sTypes').value.split('\n').map(function (l) { var p = l.split('|'); return { id: (p[0] || '').trim().toLowerCase(), label: (p[1] || p[0] || '').trim() }; })
       .filter(function (x) { return /^[a-z0-9_-]{1,20}$/.test(x.id) && x.label; });
@@ -944,6 +973,7 @@
     var val = { brand: { name: $('sName').value.trim().slice(0, 40) || 'Cafe', logo_url: $('sLogo').value.trim() },
       theme: { primary: $('sPrimary').value, accent: $('sAccent').value, bg: $('sBg').value, surface: $('sSurface').value, text: $('sText').value },
       reprice_elapsed: $('sRep').value === 'all',
+      cashier_perms: CFG.perms || {},
       tiers: { '2': $('sT2').value.trim().slice(0, 20) || 'فردي', '4': $('sT4').value.trim().slice(0, 20) || 'زوجي' },
       dir: $('sDir').value, currency: $('sCur').value.trim().slice(0, 12) || 'جنيه',
       receipt: { subtitle: $('sSub').value.trim(), footer: $('sFoot').value.trim(), extra: $('sExtra').value.trim() },
