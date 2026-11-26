@@ -54,15 +54,15 @@ begin
   end loop;
 end $$;
 
--- void needs an admin (money control); every void is audited with the admin's name
+-- void: cashiers may void, but a reason is required and every void is audited (who + why), visible to the admin
 create or replace function public.void_session_item(p_item_id bigint, p_reason text)
 returns void language plpgsql security definer set search_path = public as $$
 begin
-  if not public.is_admin() then raise exception 'not authorized' using errcode = '42501'; end if;
+  if not public.is_staff() then raise exception 'not authorized' using errcode = '42501'; end if;
   if length(trim(coalesce(p_reason, ''))) < 2 then raise exception 'reason required'; end if;
   update session_items i
      set voided_at = now(), void_reason = left(trim(p_reason), 120),
-         voided_by = coalesce(nullif(auth.jwt() ->> 'email', ''), 'admin')
+         voided_by = coalesce(nullif(auth.jwt() ->> 'email', ''), 'staff')
    where i.id = p_item_id and i.voided_at is null
      and exists (select 1 from room_sessions s where s.id = i.session_id and s.ended_at is null);
   if not found then raise exception 'item not found or session closed'; end if;

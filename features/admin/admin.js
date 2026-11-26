@@ -516,9 +516,9 @@
         sItems.forEach(function (x) {
           var row = el('div', 'r-item' + (x.voided_at ? ' voided' : ''));
           row.appendChild(el('span', null, x.qty + ' × ' + x.name + ' = ' + (x.qty * x.price) + ' جنيه' + (x.source === 'order' ? ' (من المنيو)' : '') +
-            (x.voided_at ? ' · ملغي: ' + (x.void_reason || '') : '')));
+            (x.voided_at ? ' · ملغي: ' + (x.void_reason || '') + (x.voided_by ? ' (بواسطة ' + String(x.voided_by).split('@')[0] + ')' : '') : '')));
           if (!x.voided_at) {
-            var del = el('button', 'btn small ghost danger adm-only', 'إلغاء');
+            var del = el('button', 'btn small ghost danger', 'إلغاء');
             del.onclick = function () {
               del.hidden = true;
               var why = el('input', 'mini-in wide'); why.placeholder = 'سبب الإلغاء (مطلوب)'; why.maxLength = 120; why.setAttribute('aria-label', 'سبب الإلغاء');
