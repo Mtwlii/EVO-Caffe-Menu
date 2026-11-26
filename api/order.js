@@ -70,9 +70,9 @@ module.exports = async function (req, res) {
   var msg = { chat_id: null, text: text.join('\n') };
   if (tracked) {
     msg.reply_markup = { inline_keyboard: [[
-      { text: 'مقبول', callback_data: 's:' + oid + ':' + okey + ':accepted' },
-      { text: 'بيتحضّر', callback_data: 's:' + oid + ':' + okey + ':preparing' },
-      { text: 'جاهز ✅', callback_data: 's:' + oid + ':' + okey + ':ready' }
+      { text: 'مقبول', callback_data: 's:' + oid + ':' + okey + ':a' },
+      { text: 'بيتحضّر', callback_data: 's:' + oid + ':' + okey + ':p' },
+      { text: 'جاهز ✅', callback_data: 's:' + oid + ':' + okey + ':r' }
     ]] };
   }
 

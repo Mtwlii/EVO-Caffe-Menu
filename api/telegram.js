@@ -6,6 +6,7 @@
 // below is public by design (the RPC enforces the per-order secret key).
 var SUPA_URL = 'https://lfkhfwvxwyhhpvygtffr.supabase.co';
 var SUPA_KEY = 'sb_publishable_NHBbzyQKqZ18PNamz5q5bw_fZTHP94d';
+var CODE2STATUS = { a: 'accepted', p: 'preparing', r: 'ready' };
 var LABELS = { accepted: 'مقبول', preparing: 'بيتحضّر 👨‍🍳', ready: 'جاهز ✅' };
 
 module.exports = async function (req, res) {
@@ -18,8 +19,8 @@ module.exports = async function (req, res) {
   if (!cq || !cq.data || cq.data.indexOf('s:') !== 0) return res.status(200).json({ ok: true });
 
   var parts = String(cq.data).split(':');
-  var oid = parts[1], key = parts[2], st = parts[3];
-  if (!oid || !key || !LABELS[st]) return res.status(200).json({ ok: true });
+  var oid = parts[1], key = parts[2], st = CODE2STATUS[parts[3]];
+  if (!oid || !key || !st) return res.status(200).json({ ok: true });
 
   function tg(method, payload) {
     return fetch('https://api.telegram.org/bot' + token + '/' + method, {
