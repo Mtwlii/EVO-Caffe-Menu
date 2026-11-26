@@ -47,6 +47,20 @@ module.exports = async function (req, res) {
     total += q * p;
     lines.push('• ' + q + ' × ' + name + ' (' + p + ') = ' + q * p + (it.note ? '\n   ملاحظة: ' + s(it.note, 80) : ''));
   }
+  // Server-side price check: a known menu item must carry one of its real prices (the client can't make it cheaper).
+  // Names the menu doesn't know are kept but flagged in the Telegram message.
+  var flagged = false;
+  try {
+    var mr = await fetch(SUPA_URL + '/rest/v1/menu_items?select=name,prices&limit=2000', { headers: { apikey: SUPA_KEY, authorization: 'Bearer ' + SUPA_KEY } });
+    if (mr.ok) {
+      var menu = {}; (await mr.json()).forEach(function (m) { (menu[m.name] = menu[m.name] || []).push.apply(menu[m.name], m.prices || []); });
+      for (var k = 0; k < b.items.length; k++) {
+        var nm = s(b.items[k].name, 60), pr = Number(b.items[k].price);
+        if (menu[nm]) { if (menu[nm].indexOf(pr) < 0) return fail(res, 409, 'price'); }
+        else { flagged = true; lines[k] = '⚠️ ' + lines[k]; }
+      }
+    }
+  } catch (e) {}
   // brand name + currency come from the client's settings (public app_settings row)
   var brandName = 'المنيو', cur = 'جنيه';
   try {
@@ -58,6 +72,7 @@ module.exports = async function (req, res) {
   if (s(b.who, 40)) text.push('الاسم: ' + s(b.who, 40));
   text.push('', lines.join('\n'), '', 'الإجمالي: ' + total + ' ' + cur);
   if (s(b.note, 120)) text.push('ملاحظات: ' + s(b.note, 120));
+  if (flagged) text.push('', '⚠️ صنف مش في المنيو الحالي، راجع السعر');
 
   // Store the order for status tracking (key-gated RPC; anon key is public by design).
   var tracked = false;

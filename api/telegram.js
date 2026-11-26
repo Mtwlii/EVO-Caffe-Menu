@@ -14,13 +14,17 @@ module.exports = async function (req, res) {
   var token = process.env.TELEGRAM_BOT_TOKEN;
   if (!token || !SUPA_URL || !SUPA_KEY) return res.status(200).json({ ok: true }); // not configured: ack silently
 
+  // Telegram sends our secret in this header (registered with setWebhook secret_token). Derived from the bot token, so no new env var.
+  var secret = require('crypto').createHash('sha256').update('tg-webhook|' + token).digest('hex');
+  if (req.headers['x-telegram-bot-api-secret-token'] !== secret) return res.status(401).json({ ok: false });
+
   var u = req.body || {};
   var cq = u.callback_query;
   if (!cq || !cq.data || cq.data.indexOf('s:') !== 0) return res.status(200).json({ ok: true });
 
   var parts = String(cq.data).split(':');
   var oid = parts[1], key = parts[2], st = CODE2STATUS[parts[3]];
-  if (!oid || !key || !st) return res.status(200).json({ ok: true });
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(oid || '') || !/^[0-9a-f]{12,32}$/.test(key || '') || !st) return res.status(200).json({ ok: true });
 
   function tg(method, payload) {
     return fetch('https://api.telegram.org/bot' + token + '/' + method, {

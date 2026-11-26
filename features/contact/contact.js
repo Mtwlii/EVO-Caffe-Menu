@@ -8,16 +8,17 @@
     facebook: '<path d="M14 21v-8h2.600l.4-3H14V8.200c0-.9.400-1.500 1.600-1.500H17V4.100C16.600 4 15.800 4 15 4c-2.200 0-3.600 1.300-3.600 3.700V10H9v3h2.400v8z"/>',
     tiktok: '<path d="M14 4v10.500a3.500 3.500 0 11-3.500-3.500M14 4c.4 2.400 2 3.800 4.500 4"/>'
   };
-  function href(k, v) { return k === 'phone' ? 'tel:+' + v.replace(/\D/g, '') : k === 'whatsapp' ? 'https://wa.me/' + v.replace(/\D/g, '') : v; }
+  function esc(t) { return String(t).replace(/[&<>"']/g, function (ch) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]; }); }
+  function href(k, v) { return k === 'phone' ? 'tel:+' + v.replace(/\D/g, '') : k === 'whatsapp' ? 'https://wa.me/' + v.replace(/\D/g, '') : /^https:\/\//i.test(v) ? v : '#'; }
   var labels = { phone: 'اتصل', whatsapp: 'واتساب', map: 'الموقع', instagram: 'انستجرام', facebook: 'فيسبوك', tiktok: 'تيك توك' };
   ['phone', 'whatsapp', 'map', 'instagram', 'facebook', 'tiktok'].forEach(function (k) {
-    if (c[k]) links.push('<a class="c-btn c-' + k + '" href="' + href(k, c[k]) + '" target="_blank" rel="noopener"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true">' + I[k] + '</svg><span>' + labels[k] + '</span></a>');
+    if (c[k]) links.push('<a class="c-btn c-' + k + '" href="' + esc(href(k, c[k])) + '" target="_blank" rel="noopener"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true">' + I[k] + '</svg><span>' + labels[k] + '</span></a>');
   });
   var f = document.querySelector('.footer');
   var info = '';
-  if (c.address) info += '<div class="c-line">' + c.address + '</div>';
-  if (c.hours) info += '<div class="c-line">' + c.hours + '</div>';
-  if (c.hoursEn) info += '<div class="c-line c-en" dir="ltr">' + c.hoursEn + '</div>';
+  if (c.address) info += '<div class="c-line">' + esc(c.address) + '</div>';
+  if (c.hours) info += '<div class="c-line">' + esc(c.hours) + '</div>';
+  if (c.hoursEn) info += '<div class="c-line c-en" dir="ltr">' + esc(c.hoursEn) + '</div>';
   if (links.length || info) {
     var box = document.createElement('div'); box.className = 'contact';
     box.innerHTML = info + (links.length ? '<div class="c-row">' + links.join('') + '</div>' : '');
