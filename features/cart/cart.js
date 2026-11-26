@@ -27,7 +27,7 @@
   // ---------- controls on every menu item ----------
   function decorate() {
     document.querySelectorAll('.item, .extra-pill, .f-card').forEach(function (it) {
-      if (it.querySelector('.qty')) return;
+      if (it.querySelector('.qty') || it.classList.contains('oos')) return;
       var nameEl = it.querySelector('.item-name'), priceEl = it.querySelector('.item-price');
       var name = (nameEl ? nameEl.firstChild.textContent : it.firstElementChild.textContent).trim();
       if (!priceEl) return;

@@ -106,7 +106,7 @@ Staff app at `/admin/` (Supabase Auth + Postgres, Vercel serverless, free tiers)
 - Offline mode: offline banner, cached rooms, closes queued in the browser and synced on reconnect with conflict handling, manual summary button, service worker (`admin/sw.js`).
 
 ### Setup
-1. Create a Supabase project, run `db/*.sql` in order in the SQL editor (001 to 011 for a new project; an existing project that has 001 to 005 needs 006 onward).
+1. Create a Supabase project, run `db/*.sql` in order in the SQL editor (001 to 012 for a new project; an existing project that has 001 to 005 needs 006 onward).
 2. Put the project URL and publishable key in the admin config. Create the admin user in Supabase Auth and add it to `staff_emails`/roles per `007`.
 3. Vercel env vars: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`; register the Telegram webhook to the deployment you want.
 4. Never commit secrets. Passwords are typed in the panel only.
@@ -120,11 +120,15 @@ Staff app at `/admin/` (Supabase Auth + Postgres, Vercel serverless, free tiers)
 | 009_offline_close | `close_room_session` with client end time |
 | 010_vip | VIP rates, segments and rooms; `set_session_vip` |
 | 011_reprice | reprice mode setting, `session_time_cost`, totals in audit |
+| 012_menu | customer menu tables (`menu_categories`, `menu_items`), seeded from the static page, public read, admin write |
 
 ### White-label settings (admin, "الإعدادات")
 Brand name, colors/theme, text direction, currency, receipt text, room types, shifts, label swaps, فردي/زوجي names, reprice mode. One client = one Supabase project + one Vercel project.
 
+### Customer menu from the database
+`index.html` keeps the static menu as a fallback. `features/data/menu-db.js` loads categories and items from Supabase (public read), renders them, caches them in localStorage (`evo-menu-cache-v1`) so the menu still opens offline after the first visit, then loads the other scripts. Admin "المنيو" tab edits categories, items (name, description, price/s, image link, hide, out of stock, featured, order). The print button ("تحميل المنيو PDF / طباعة") prints the rendered menu, so the PDF always matches the database. Theme colors from settings (primary, accent, background, cards, text, or a preset) apply to the menu and the admin app.
+
 ### Roadmap
-- DB-driven customer menu (items, categories, images, prices, hide/out-of-stock) editable from admin
+- Menu photos upload (today: https image links), per-item options
 - Reports by shift and cashier, CSV export
 - Multi-branch option

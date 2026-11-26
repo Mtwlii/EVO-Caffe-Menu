@@ -2,13 +2,13 @@
 :root{
   --a-bg:#080c15; --a-bg2:#0d1322; --a-surface:#121a2c; --a-raise:#18223a; --a-line:#25314f; --a-line2:#32426a;
   --a-text:#eaf0ff; --a-soft:#aab6d6; --a-mute:#8896bb;
-  --a-cyan:#22d3ee; --a-cyan-d:#0891b2; --a-green:#4ade80; --a-red:#f87171; --a-blue:#60a5fa; --a-pink:#f472b6; --a-amber:#fbbf24;
+  --a-cyan:#22d3ee; --a-accent:#f472b6; --a-cyan-d:#0891b2; --a-green:#4ade80; --a-red:#f87171; --a-blue:#60a5fa; --a-pink:#f472b6; --a-amber:#fbbf24;
   --a-r:14px; --a-r-s:10px; --a-ease:cubic-bezier(.22,1,.36,1);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Cairo',sans-serif;background:radial-gradient(1200px 500px at 50% -200px,color-mix(in srgb,var(--a-cyan) 14%,var(--a-bg)) 0,transparent 70%),var(--a-bg);background-attachment:fixed;color:var(--a-text);min-height:100vh;-webkit-font-smoothing:antialiased}
 .adm-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 20px;background:rgba(13,19,34,.88);backdrop-filter:blur(10px);border-bottom:1px solid var(--a-line);position:sticky;top:0;z-index:5}
-.adm-head::after{content:"";position:absolute;inset-inline:0;bottom:-1px;height:2px;background:linear-gradient(90deg,var(--a-green),var(--a-cyan),var(--a-blue),var(--a-pink));opacity:.85}
+.adm-head::after{content:"";position:absolute;inset-inline:0;bottom:-1px;height:2px;background:linear-gradient(90deg,var(--a-green),var(--a-cyan),var(--a-blue),var(--a-accent));opacity:.85}
 .adm-brand{display:flex;align-items:center;gap:12px}
 .adm-logo{width:44px;height:30px;color:var(--a-cyan);flex:none}
 .adm-head h1{font-size:18px;font-weight:900;letter-spacing:.3px;color:var(--a-text)}
@@ -161,3 +161,9 @@ textarea{font-family:inherit;font-size:14px;padding:10px 12px;border-radius:var(
   body.print-receipt .bill-box>*:not(.receipt-paper){display:none!important}
   body.print-receipt .receipt-paper{width:72mm;border-radius:0;padding:3mm 0;font-size:12px}
 }
+
+.m-in{flex:1 1 150px;min-width:110px;padding:7px 8px}
+
+.presets{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 10px}
+.preset{border:1px solid var(--a-line2);border-radius:12px;min-width:92px;height:54px;color:#fff;font:700 12px 'Cairo',sans-serif;display:flex;align-items:flex-end;justify-content:center;padding:4px;cursor:pointer;text-shadow:0 1px 3px #000}
+.preset:hover{outline:2px solid var(--a-cyan)}

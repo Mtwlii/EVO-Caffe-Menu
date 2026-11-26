@@ -6,6 +6,7 @@
 // configured or when the fetch fails - the static menu always keeps working.
 (function () {
   var cfg = window.EVO_DATA || {};
+  if (window.__evoMenuDB) return; // menu already comes from the database (hidden/out-of-stock/prices built in)
   if (!cfg.url || !cfg.anonKey) return; // window.__evoDataReady stays unset
 
   var domReady = new Promise(function (res) {

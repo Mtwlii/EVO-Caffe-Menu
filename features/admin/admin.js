@@ -39,7 +39,7 @@
   }
   function applyCfg() {
     var r = document.documentElement.style, th = CFG.theme || {};
-    [['primary', '--a-cyan'], ['bg', '--a-bg'], ['surface', '--a-surface'], ['text', '--a-text']].forEach(function (p) {
+    [['primary', '--a-cyan'], ['accent', '--a-accent'], ['bg', '--a-bg'], ['surface', '--a-surface'], ['text', '--a-text']].forEach(function (p) {
       if (/^#[0-9a-f]{6}$/i.test(th[p[0]] || '')) r.setProperty(p[1], th[p[0]]); else r.removeProperty(p[1]);
     });
     document.documentElement.dir = CFG.dir; document.documentElement.setAttribute('data-dir', CFG.dir);
@@ -183,28 +183,12 @@
   function norm(t) { return t.replace(/[ً-ْـ]/g, '').replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').toLowerCase().trim(); }
 
   function loadMenu() {
-    return fetch('../').then(function (r) { return r.text(); }).then(function (html) {
-      var doc = new DOMParser().parseFromString(html, 'text/html');
-      var groups = [];
-      doc.querySelectorAll('.section:not(#all)').forEach(function (sec) {
-        var t = sec.querySelector('.sec-title-ar');
-        var g = { id: sec.id, title: t ? t.textContent.trim() : sec.id, items: [] };
-        sec.querySelectorAll('.item, .extra-pill').forEach(function (el) {
-          var nameEl = el.querySelector('.item-name');
-          var name = nameEl ? nameEl.textContent.trim() : (el.firstElementChild ? el.firstElementChild.textContent.trim() : '');
-          var priceEl = el.querySelector('.item-price');
-          var prices = priceEl ? digits(priceEl.textContent) : [];
-          if (name && prices.length) g.items.push({ name: name, prices: prices, key: keyOf(name, prices) });
-        });
-        if (g.items.length) groups.push(g);
-      });
-      return groups;
-    });
+    return Promise.all([
+      withAuth(function () { return api('/rest/v1/menu_categories?select=*&order=sort'); }),
+      withAuth(function () { return api('/rest/v1/menu_items?select=*&order=sort&limit=2000'); })
+    ]).then(function (p) { return { cats: p[0] || [], items: p[1] || [] }; });
   }
-  function loadOverrides() {
-    return withAuth(function () { return api('/rest/v1/menu_overrides?select=*'); })
-      .then(function (rows) { var m = {}; (rows || []).forEach(function (r) { m[r.item_key] = r; }); return m; });
-  }
+  function loadOverrides() { return Promise.resolve({}); }
 
   // ---------- render ----------
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
@@ -214,58 +198,109 @@
     clearTimeout(tm); tm = setTimeout(function () { x.hidden = true; }, 2200);
   }
 
-  var lastGroups = [], lastOverrides = {};
-  function render(groups, overrides) {
-    lastGroups = groups; lastOverrides = overrides;
+  var lastGroups = [], lastOverrides = {}, MENU = { cats: [], items: [] };
+  function mPatch(table, id, body) {
+    return withAuth(function () { return api('/rest/v1/' + table + '?id=eq.' + encodeURIComponent(id), { method: 'PATCH', headers: { prefer: 'return=minimal' }, body: JSON.stringify(body) }); });
+  }
+  function mReload() { return loadMenu().then(function (m) { render(m, {}); }); }
+  function parsePrices(t) { return digits(t).filter(function (n) { return n > 0 && n <= 2000; }).slice(0, 4); }
+  function swapSort(table, a, b) {
+    return Promise.all([mPatch(table, a.id, { sort: b.sort }), mPatch(table, b.id, { sort: a.sort })]).then(mReload);
+  }
+  function render(m) {
+    MENU = m;
+    lastGroups = m.cats.map(function (c) {
+      return { id: c.id, title: c.name_ar, items: m.items.filter(function (i) { return i.category_id === c.id && !i.hidden && i.kind !== 'sub' && i.prices.length; })
+        .map(function (i) { return { name: i.name, prices: i.prices, key: i.name + '|' + i.prices.join('/') }; }) };
+    }).filter(function (g) { return g.items.length; });
+    lastOverrides = {};
     var host = $('groups'); host.textContent = '';
     var n = 0;
-    groups.forEach(function (g) {
-      var box = el('div', 'group'); box.appendChild(el('h3', null, g.title));
-      g.items.forEach(function (it) {
+    // add category
+    var addC = el('div', 'row'); addC.appendChild(el('div', 'name', 'إضافة قسم جديد'));
+    var cId = el('input', 'm-in'); cId.placeholder = 'كود (انجليزي: shisha)'; cId.dir = 'ltr';
+    var cAr = el('input', 'm-in'); cAr.placeholder = 'الاسم بالعربي';
+    var cEn = el('input', 'm-in'); cEn.placeholder = 'الاسم بالانجليزي (اختياري)'; cEn.dir = 'ltr';
+    var cBtn = el('button', 'btn small', 'إضافة القسم');
+    cBtn.onclick = function () {
+      var id = cId.value.trim().toLowerCase();
+      if (!/^[a-z0-9_-]{1,40}$/.test(id) || !cAr.value.trim()) { toast('كود إنجليزي (حروف وأرقام) واسم عربي مطلوبين', true); return; }
+      var mx = m.cats.reduce(function (a, c) { return Math.max(a, c.sort); }, 0) + 10;
+      withAuth(function () { return api('/rest/v1/menu_categories', { method: 'POST', headers: { prefer: 'return=minimal' }, body: JSON.stringify({ id: id, name_ar: cAr.value.trim(), name_en: cEn.value.trim(), sort: mx }) }); })
+        .then(function () { toast('اتضاف القسم'); return mReload(); }).catch(function (e) { toast('فشل: ' + e.message, true); });
+    };
+    addC.append(cId, cAr, cEn, cBtn); host.appendChild(addC);
+    m.cats.forEach(function (c, ci) {
+      var box = el('div', 'group'); var h = el('h3', null, c.name_ar + (c.hidden ? ' (مخفي)' : '')); box.appendChild(h);
+      var ch = el('div', 'row');
+      var nAr = el('input', 'm-in'); nAr.value = c.name_ar; nAr.setAttribute('aria-label', 'اسم القسم');
+      var nEn = el('input', 'm-in'); nEn.value = c.name_en; nEn.dir = 'ltr';
+      var hidL = el('label', 'chk'), hid = el('input'); hid.type = 'checkbox'; hid.checked = !!c.hidden; hidL.append(hid, document.createTextNode('مخفي'));
+      var sv = el('button', 'btn small', 'حفظ القسم');
+      sv.onclick = function () { mPatch('menu_categories', c.id, { name_ar: nAr.value.trim() || c.name_ar, name_en: nEn.value.trim(), hidden: hid.checked }).then(function () { toast('اتحفظ القسم'); return mReload(); }).catch(function (e) { toast('فشل: ' + e.message, true); }); };
+      var up = el('button', 'btn small ghost', '↑'), dn = el('button', 'btn small ghost', '↓');
+      up.onclick = function () { if (ci > 0) swapSort('menu_categories', c, m.cats[ci - 1]); }; 
+      dn.onclick = function () { if (ci < m.cats.length - 1) swapSort('menu_categories', c, m.cats[ci + 1]); };
+      var del = el('button', 'btn small ghost danger', 'حذف القسم');
+      del.onclick = function () {
+        if (!confirm('حذف قسم "' + c.name_ar + '" وكل أصنافه؟')) return;
+        withAuth(function () { return api('/rest/v1/menu_categories?id=eq.' + encodeURIComponent(c.id), { method: 'DELETE', headers: { prefer: 'return=minimal' } }); })
+          .then(function () { toast('اتحذف القسم'); return mReload(); }).catch(function (e) { toast('فشل: ' + e.message, true); });
+      };
+      ch.append(nAr, nEn, hidL, sv, up, dn, del); box.appendChild(ch);
+      var rows = m.items.filter(function (i) { return i.category_id === c.id; });
+      rows.forEach(function (it, ri) {
         n++;
-        var ov = overrides[it.key] || {};
-        var row = el('div', 'row' + (ov.out_of_stock ? ' oos' : ''));
-        row.dataset.key = it.key; row.dataset.name = norm(it.name);
-        if (ov.hidden) row.dataset.hidden = '1';
-        row.appendChild(el('div', 'name', it.name));
-        row.appendChild(el('div', 'cur', 'الحالي: ' + (ov.prices || it.prices).join(' / ') + ' جنيه' + (ov.prices ? ' (الأصل: ' + it.prices.join(' / ') + ')' : '')));
-        var eff = ov.prices || it.prices;
-        var inputs = it.prices.map(function (_, i) {
-          var inp = el('input', 'price-in'); inp.type = 'text'; inp.inputMode = 'numeric';
-          inp.value = eff[i] != null ? eff[i] : it.prices[i];
-          inp.setAttribute('aria-label', 'سعر ' + it.name + (it.prices.length > 1 ? ' ' + (i + 1) : ''));
-          return inp;
-        });
-        inputs.forEach(function (inp) { row.appendChild(inp); });
-        var oosL = el('label', 'chk'), oos = el('input'); oos.type = 'checkbox'; oos.checked = !!ov.out_of_stock;
-        oosL.append(oos, document.createTextNode('خلصان')); row.appendChild(oosL);
-        var hidL = el('label', 'chk'), hid = el('input'); hid.type = 'checkbox'; hid.checked = !!ov.hidden;
-        hidL.append(hid, document.createTextNode('مخفي')); row.appendChild(hidL);
+        var row = el('div', 'row' + (it.out_of_stock ? ' oos' : '')); row.dataset.name = norm(it.name);
+        if (it.kind === 'sub') row.appendChild(el('div', 'cur', 'عنوان فرعي'));
+        if (it.kind === 'extra') row.appendChild(el('div', 'cur', 'إضافة'));
+        var nm = el('input', 'm-in'); nm.value = it.name; nm.setAttribute('aria-label', 'اسم الصنف');
+        var ds = el('input', 'm-in'); ds.value = it.descr; ds.placeholder = 'وصف (اختياري)';
+        var pr = el('input', 'price-in'); pr.value = it.prices.join('/'); pr.placeholder = '30/40'; pr.dir = 'ltr'; pr.setAttribute('aria-label', 'السعر');
+        var im = el('input', 'm-in'); im.value = it.image_url; im.placeholder = 'رابط صورة https (اختياري)'; im.dir = 'ltr';
+        row.appendChild(nm);
+        if (it.kind !== 'sub') row.append(pr, ds, im);
+        var oos, hi;
+        function chk(label, v) { var L = el('label', 'chk'), i = el('input'); i.type = 'checkbox'; i.checked = !!v; L.append(i, document.createTextNode(label)); row.appendChild(L); return i; }
+        if (it.kind !== 'sub') oos = chk('خلصان', it.out_of_stock);
+        var hd = chk('مخفي', it.hidden);
+        if (it.kind === 'item') hi = chk('مميز', it.highlight);
         var save = el('button', 'btn small', 'حفظ');
         save.onclick = function () {
-          var vals = inputs.map(function (inp) { var d = digits(inp.value); return d.length ? d[0] : 0; });
-          var changed = vals.some(function (v, i) { return v !== it.prices[i]; });
-          if (vals.some(function (v) { return !(v > 0 && v <= 2000); })) { toast('السعر لازم يكون بين 1 و 2000', true); return; }
+          var ps = it.kind === 'sub' ? [] : parsePrices(pr.value);
+          if (it.kind !== 'sub' && !ps.length) { toast('السعر لازم بين 1 و 2000', true); return; }
+          if (!nm.value.trim()) { toast('الاسم مطلوب', true); return; }
+          if (it.kind !== 'sub' && im.value.trim() && !/^https:\/\//.test(im.value.trim())) { toast('رابط الصورة لازم https', true); return; }
           save.disabled = true;
-          var body = { item_key: it.key, prices: changed ? vals : null, out_of_stock: oos.checked, hidden: hid.checked, updated_at: new Date().toISOString() };
-          withAuth(function () {
-            return api('/rest/v1/menu_overrides', {
-              method: 'POST',
-              headers: { prefer: 'resolution=merge-duplicates,return=minimal' },
-              body: JSON.stringify(body)
-            });
-          }).then(function () {
-            overrides[it.key] = body;
-            row.classList.toggle('oos', oos.checked);
-            row.dataset.hidden = hid.checked ? '1' : '';
-            row.querySelector('.cur').textContent = 'الحالي: ' + (body.prices || it.prices).join(' / ') + ' جنيه' + (body.prices ? ' (الأصل: ' + it.prices.join(' / ') + ')' : '');
-            toast('اتحفظ: ' + it.name);
-          }).catch(function (e) { toast('فشل الحفظ: ' + e.message, true); })
-            .then(function () { save.disabled = false; });
+          mPatch('menu_items', it.id, { name: nm.value.trim(), descr: it.kind === 'sub' ? '' : ds.value.trim(), prices: ps, image_url: it.kind === 'sub' ? '' : im.value.trim(),
+            hidden: hd.checked, out_of_stock: oos ? oos.checked : false, highlight: hi ? hi.checked : false, updated_at: new Date().toISOString() })
+            .then(function () { toast('اتحفظ: ' + nm.value.trim()); return mReload(); }).catch(function (e) { toast('فشل الحفظ: ' + e.message, true); save.disabled = false; });
         };
-        row.appendChild(save);
-        box.appendChild(row);
+        var u = el('button', 'btn small ghost', '↑'), d = el('button', 'btn small ghost', '↓');
+        u.onclick = function () { if (ri > 0) swapSort('menu_items', it, rows[ri - 1]); };
+        d.onclick = function () { if (ri < rows.length - 1) swapSort('menu_items', it, rows[ri + 1]); };
+        var x = el('button', 'btn small ghost danger', 'حذف');
+        x.onclick = function () {
+          if (!confirm('حذف "' + it.name + '"؟')) return;
+          withAuth(function () { return api('/rest/v1/menu_items?id=eq.' + it.id, { method: 'DELETE', headers: { prefer: 'return=minimal' } }); })
+            .then(function () { toast('اتحذف'); return mReload(); }).catch(function (e) { toast('فشل: ' + e.message, true); });
+        };
+        row.append(save, u, d, x); box.appendChild(row);
       });
+      var add = el('div', 'row'); add.appendChild(el('div', 'cur', 'صنف جديد في ' + c.name_ar));
+      var aN = el('input', 'm-in'); aN.placeholder = 'اسم الصنف';
+      var aP = el('input', 'price-in'); aP.placeholder = '30/40'; aP.dir = 'ltr';
+      var aK = el('select', 'mini-s'); [['item', 'صنف'], ['extra', 'إضافة'], ['sub', 'عنوان فرعي']].forEach(function (o) { var op = el('option', null, o[1]); op.value = o[0]; aK.appendChild(op); });
+      var aB = el('button', 'btn small', 'إضافة');
+      aB.onclick = function () {
+        var ps = aK.value === 'sub' ? [] : parsePrices(aP.value);
+        if (!aN.value.trim() || (aK.value !== 'sub' && !ps.length)) { toast('الاسم والسعر مطلوبين', true); return; }
+        var mx = rows.reduce(function (a, r) { return Math.max(a, r.sort); }, 0) + 10;
+        aB.disabled = true;
+        withAuth(function () { return api('/rest/v1/menu_items', { method: 'POST', headers: { prefer: 'return=minimal' }, body: JSON.stringify({ category_id: c.id, kind: aK.value, name: aN.value.trim(), prices: ps, sort: mx }) }); })
+          .then(function () { toast('اتضاف: ' + aN.value.trim()); return mReload(); }).catch(function (e) { toast('فشل: ' + e.message, true); aB.disabled = false; });
+      };
+      add.append(aN, aP, aK, aB); box.appendChild(add);
       host.appendChild(box);
     });
     $('count').textContent = n + ' صنف';
@@ -610,7 +645,7 @@
             del.onclick = function () {
               del.hidden = true;
               var why = el('input', 'mini-in wide'); why.placeholder = 'سبب الإلغاء (مطلوب)'; why.maxLength = 120; why.setAttribute('aria-label', 'سبب الإلغاء');
-              var okb = el('button', 'btn small danger', 'تأكيد الإلغاء');
+              var okb = el('button', 'btn small ghost danger', 'تأكيد الإلغاء');
               okb.onclick = function () {
                 var rs = why.value.trim();
                 if (rs.length < 2) { toast('اكتب سبب الإلغاء', true); why.focus(); return; }
@@ -873,10 +908,29 @@
   };
 
   // ---------- settings (admin only) ----------
+  var PRESETS = [
+    { n: 'نيلي (افتراضي)', primary: '#22d3ee', accent: '#f472b6', bg: '#080c15', surface: '#121a2c', text: '#eaf0ff' },
+    { n: 'دهبي', primary: '#f5c800', accent: '#d9774a', bg: '#17100b', surface: '#221810', text: '#f7eddc' },
+    { n: 'زمردي', primary: '#34d399', accent: '#fbbf24', bg: '#06120e', surface: '#0e1f19', text: '#e9fff6' },
+    { n: 'وردي', primary: '#fb7185', accent: '#fbbf24', bg: '#140a0e', surface: '#22121a', text: '#fff1f4' },
+    { n: 'بنفسجي', primary: '#818cf8', accent: '#f472b6', bg: '#0b0b1a', surface: '#15152b', text: '#eef0ff' },
+    { n: 'فاتح', primary: '#0891b2', accent: '#f59e0b', bg: '#f1f5f9', surface: '#ffffff', text: '#0f172a' }
+  ];
+  function buildPresets() {
+    var host = $('sPresets'); if (!host || host.firstChild) return;
+    PRESETS.forEach(function (p) {
+      var b = el('button', 'preset'); b.type = 'button'; b.title = p.n;
+      b.style.background = 'linear-gradient(135deg,' + p.bg + ' 0 50%,' + p.primary + ' 50% 75%,' + p.accent + ' 75%)';
+      b.appendChild(el('span', null, p.n));
+      b.onclick = function () { $('sPrimary').value = p.primary; $('sAccent').value = p.accent; $('sBg').value = p.bg; $('sSurface').value = p.surface; $('sText').value = p.text; toast('اتختار: ' + p.n + ' (اضغط حفظ)'); };
+      host.appendChild(b);
+    });
+  }
   function bootSettings() {
+    buildPresets();
     var b = CFG.brand, t = CFG.theme || {}, rc = CFG.receipt;
     $('sName').value = b.name; $('sLogo').value = b.logo_url || '';
-    $('sPrimary').value = t.primary || '#22d3ee'; $('sBg').value = t.bg || '#080c15'; $('sSurface').value = t.surface || '#121a2c'; $('sText').value = t.text || '#eaf0ff';
+    $('sPrimary').value = t.primary || '#22d3ee'; $('sAccent').value = t.accent || '#f472b6'; $('sBg').value = t.bg || '#080c15'; $('sSurface').value = t.surface || '#121a2c'; $('sText').value = t.text || '#eaf0ff';
     $('sRep').value = CFG.reprice ? 'all' : 'from_now'; $('sT2').value = tierLabel(2); $('sT4').value = tierLabel(4); $('sDir').value = CFG.dir; $('sCur').value = CFG.currency;
     $('sSub').value = rc.subtitle; $('sFoot').value = rc.footer; $('sExtra').value = rc.extra || '';
     $('sTypes').value = CFG.room_types.map(function (x) { return x.id + '|' + x.label; }).join('\n');
@@ -888,7 +942,7 @@
     if (!types.length) { toast('لازم نوع غرفة واحد على الأقل (مثال: vip|VIP)', true); return; }
     if (/^https?:/.test($('sLogo').value.trim()) && !/^https:/.test($('sLogo').value.trim())) { toast('رابط اللوجو لازم https', true); return; }
     var val = { brand: { name: $('sName').value.trim().slice(0, 40) || 'Cafe', logo_url: $('sLogo').value.trim() },
-      theme: { primary: $('sPrimary').value, bg: $('sBg').value, surface: $('sSurface').value, text: $('sText').value },
+      theme: { primary: $('sPrimary').value, accent: $('sAccent').value, bg: $('sBg').value, surface: $('sSurface').value, text: $('sText').value },
       reprice_elapsed: $('sRep').value === 'all',
       tiers: { '2': $('sT2').value.trim().slice(0, 20) || 'فردي', '4': $('sT4').value.trim().slice(0, 20) || 'زوجي' },
       dir: $('sDir').value, currency: $('sCur').value.trim().slice(0, 12) || 'جنيه',
