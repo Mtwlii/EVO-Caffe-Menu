@@ -9,7 +9,7 @@
 
   // ---------- white-label config (table app_settings, key 'config') ----------
   var DEFAULTS = { brand: { name: 'Cafe', logo_url: '' }, theme: {}, dir: 'rtl', currency: 'جنيه',
-    receipt: { subtitle: 'إيصال', footer: 'شكراً لزيارتكم', extra: '' },
+    receipt: { subtitle: 'إيصال', footer: 'شكراً لزيارتكم', extra: '', logo: false, logo_img: '' },
     room_types: [{ id: 'ps4', label: 'PS4' }, { id: 'ps5', label: 'PS5' }], shifts: [], labels: '', reprice: true, tiers: { '2': 'فردي', '4': 'زوجي' } };
   var CFG = JSON.parse(JSON.stringify(DEFAULTS));
   var SWAP = [];   // [[from, to]] phrase overrides: currency + custom labels
@@ -386,6 +386,7 @@
   function showReceipt(data) {
     var ov = el('div', 'bill-ov'), box = el('div', 'bill-box receipt-box');
     var paper = el('div', 'receipt-paper' + (CFG.rcWidth === 58 ? ' w58' : ''));
+    if (CFG.receipt.logo && /^data:image\/png;base64,/.test(CFG.receipt.logo_img || '')) { var lg = el('img', 'rc-logo'); lg.alt = ''; lg.src = CFG.receipt.logo_img; paper.appendChild(lg); }
     paper.appendChild(el('div', 'rc-brand', CFG.brand.name));
     paper.appendChild(el('div', 'rc-sub', CFG.receipt.subtitle));
     if (CFG.receipt.extra) paper.appendChild(el('div', 'rc-sub', CFG.receipt.extra));
@@ -1491,16 +1492,40 @@
     }
   }
   function rpcGet(path) { return withAuth(function () { return api(path); }); }
+  // receipt logo: converted in the browser to a black-and-white (1-bit look) PNG, max 300px wide, so thermal printers print it sharp
+  var rcImg = '';
+  function drawRcLogo() { var p = $('sRcLogoPrev'); if (!p) return; p.hidden = !rcImg; if (rcImg) p.src = rcImg; }
+  function toBW(src, cb) {
+    var im = new Image();
+    im.onload = function () {
+      var w = Math.min(300, im.naturalWidth || 300), h = Math.max(1, Math.round(w * (im.naturalHeight || 1) / (im.naturalWidth || 1)));
+      if (h > 200) { h = 200; w = Math.max(1, Math.round(h * (im.naturalWidth || 1) / (im.naturalHeight || 1))); }
+      var c = document.createElement('canvas'); c.width = w; c.height = h; var x = c.getContext('2d');
+      x.fillStyle = '#fff'; x.fillRect(0, 0, w, h); x.drawImage(im, 0, 0, w, h);
+      var d = x.getImageData(0, 0, w, h), a = d.data;
+      for (var i = 0; i < a.length; i += 4) { var v = (a[i] * 0.299 + a[i + 1] * 0.587 + a[i + 2] * 0.114) < 170 ? 0 : 255; a[i] = a[i + 1] = a[i + 2] = v; a[i + 3] = 255; }
+      x.putImageData(d, 0, 0); cb(c.toDataURL('image/png'));
+    };
+    im.onerror = function () { toast('الصورة مش مقروءة (PNG أو JPG أو SVG)', true); };
+    im.src = src;
+  }
   function bootSettings() {
     buildPresets(); bootPerms(); themeAction = null;
     var b = CFG.brand, t = CFG.theme || {}, rc = CFG.receipt;
     $('sName').value = b.name; $('sLogo').value = b.logo_url || '';
     $('sPrimary').value = t.primary || '#22d3ee'; $('sAccent').value = t.accent || '#f472b6'; $('sBg').value = t.bg || '#080c15'; $('sSurface').value = t.surface || '#121a2c'; $('sText').value = t.text || '#eaf0ff';
     $('sExpCap').value = CFG.expenseCap; $('sTz').value = CFG.tz; $('sDayStart').value = CFG.dayStart; $('sRcW').value = String(CFG.rcWidth); $('sRep').value = CFG.reprice ? 'all' : 'from_now'; $('sT2').value = tierLabel(2); $('sT4').value = tierLabel(4); $('sDir').value = CFG.dir; $('sCur').value = CFG.currency;
-    $('sSub').value = rc.subtitle; $('sFoot').value = rc.footer; $('sExtra').value = rc.extra || '';
+    $('sRcLogo').checked = !!rc.logo; rcImg = rc.logo_img || ''; drawRcLogo(); $('sSub').value = rc.subtitle; $('sFoot').value = rc.footer; $('sExtra').value = rc.extra || '';
     $('sTypes').value = CFG.room_types.map(function (x) { return x.id + '|' + x.label; }).join('\n');
     $('sShifts').value = CFG.shifts.join('\n'); $('sLabels').value = CFG.labels || '';
   }
+  $('sRcLogoFile').onchange = function () {
+    var f = this.files && this.files[0]; if (!f) return;
+    if (f.size > 2000000) { toast('الصورة كبيرة (الحد 2 ميجا)', true); return; }
+    var r = new FileReader(); r.onload = function () { toBW(r.result, function (u) { rcImg = u; $('sRcLogo').checked = true; drawRcLogo(); }); }; r.readAsDataURL(f);
+  };
+  $('sRcLogoEvo').onclick = function () { toBW('../assets/evo-logo-bw.svg', function (u) { rcImg = u; $('sRcLogo').checked = true; drawRcLogo(); }); };
+  $('sRcLogoClear').onclick = function () { rcImg = ''; $('sRcLogo').checked = false; drawRcLogo(); };
   $('sPermSave').onclick = function () {
     var o = {}; document.querySelectorAll('#sPerms input[data-perm]').forEach(function (c) { o[c.dataset.perm] = c.checked; });
     $('sPermSave').disabled = true;
@@ -1519,7 +1544,7 @@
       cashier_perms: CFG.perms || {}, tz: $('sTz').value.trim() || 'Africa/Cairo', day_start_hour: Math.max(0, Math.min(12, Number($('sDayStart').value) || 0)), expense_cap: Math.max(0, Math.min(100000, Number($('sExpCap').value) || 0)),
       tiers: { '2': $('sT2').value.trim().slice(0, 20) || 'فردي', '4': $('sT4').value.trim().slice(0, 20) || 'زوجي' },
       dir: $('sDir').value, currency: $('sCur').value.trim().slice(0, 12) || 'جنيه',
-      receipt: { subtitle: $('sSub').value.trim(), footer: $('sFoot').value.trim(), extra: $('sExtra').value.trim(), width: Number($('sRcW').value) === 58 ? 58 : 80 },
+      receipt: { subtitle: $('sSub').value.trim(), footer: $('sFoot').value.trim(), extra: $('sExtra').value.trim(), logo: $('sRcLogo').checked && !!rcImg, logo_img: rcImg, width: Number($('sRcW').value) === 58 ? 58 : 80 },
       room_types: types, shifts: $('sShifts').value.split('\n').map(function (x) { return x.trim(); }).filter(Boolean).slice(0, 12),
       labels: $('sLabels').value.slice(0, 2000) };
     $('sSave').disabled = true;

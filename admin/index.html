@@ -84,6 +84,10 @@
         <label>المنطقة الزمنية للتقارير (IANA مثل Africa/Cairo) <input id="sTz" list="tzList" maxlength="40"></label>
         <datalist id="tzList"><option value="Africa/Cairo"><option value="Asia/Riyadh"><option value="Asia/Dubai"><option value="Asia/Kuwait"><option value="Asia/Baghdad"><option value="Africa/Casablanca"><option value="Africa/Tunis"><option value="Europe/Istanbul"><option value="Europe/London"><option value="UTC"></datalist>
         <label>اليوم التجاري يبدأ الساعة (0-12). مبيعات بعد منتصف الليل تتحسب على اليوم اللي قبله <input id="sDayStart" inputmode="numeric" maxlength="2"></label>
+        <label class="chk"><input type="checkbox" id="sRcLogo"> لوجو على الإيصال وتقرير الوردية (أبيض وأسود)</label>
+        <img id="sRcLogoPrev" alt="" hidden style="background:#fff;max-width:200px;max-height:80px;padding:4px;border-radius:6px">
+        <label>رفع لوجو (PNG/JPG/SVG) <input type="file" id="sRcLogoFile" accept="image/png,image/jpeg,image/svg+xml"></label>
+        <div><button id="sRcLogoEvo" class="btn ghost small" type="button">استخدم لوجو EVO</button> <button id="sRcLogoClear" class="btn ghost small" type="button">شيل اللوجو</button></div>
         <label>عرض ورق الطباعة <select id="sRcW"><option value="80">80 مم</option><option value="58">58 مم</option></select></label>
         <label>أقصى مبلغ مصروف للكاشير في المرة (0 = بدون حد) <input id="sExpCap" inputmode="numeric" maxlength="6"></label>
         <div id="sPerms" class="perms"></div>

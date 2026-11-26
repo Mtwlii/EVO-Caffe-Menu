@@ -186,3 +186,7 @@ textarea{font-family:inherit;font-size:14px;padding:10px 12px;border-radius:var(
 .dash-h{font-weight:700;opacity:.8}
 .dash-bar{position:absolute;inset-inline-start:0;bottom:0;height:3px;background:#2bd4ee;opacity:.7}
 .ob-c{margin-inline-start:8px}
+
+.rc-logo{display:block;margin:0 auto 4px;max-width:70%;max-height:60px;width:auto;height:auto;image-rendering:pixelated;filter:grayscale(1) contrast(2)}
+.receipt-paper.w58 .rc-logo{max-width:60%;max-height:44px}
+@media print{body.print-receipt .rc-logo{max-width:60mm;max-height:22mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}body.print-receipt .receipt-paper.w58 .rc-logo{max-width:40mm;max-height:16mm}}
