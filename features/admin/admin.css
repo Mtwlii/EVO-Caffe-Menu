@@ -64,3 +64,23 @@ input:focus { outline: 2px solid var(--brand, #f5c800); }
 }
 .toast.bad { background: #b3261e; }
 [hidden] { display: none !important; }
+.tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+.tabs button {
+  flex: 1; font-family: inherit; font-size: 14px; font-weight: 700;
+  padding: 10px; border-radius: 10px; cursor: pointer;
+  background: var(--surface, #221810); color: var(--text-soft, #cdbfa8);
+  border: 1px solid var(--line, rgba(246,236,220,.12));
+}
+.tabs button.on { background: var(--brand, #f5c800); color: #17100b; border-color: var(--brand, #f5c800); }
+.room {
+  background: var(--surface, #221810); border-radius: 14px; padding: 16px;
+  margin-bottom: 10px; display: flex; flex-direction: column; gap: 10px;
+}
+.room .r-top { display: flex; justify-content: space-between; align-items: center; }
+.room .r-name { font-weight: 800; font-size: 16px; }
+.room .r-rate { color: var(--text-soft, #cdbfa8); font-size: 12px; }
+.room .r-state { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+.room .r-state.free { background: #1b3d24; color: #7bd88f; }
+.room .r-state.busy { background: #4a1a14; color: #ff9d8a; }
+.room .r-timer { font-size: 28px; font-weight: 900; text-align: center; letter-spacing: 1px; direction: ltr; }
+.room .r-price { text-align: center; color: var(--brand, #f5c800); font-weight: 700; }

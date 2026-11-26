@@ -155,6 +155,91 @@
     });
   });
 
+  // ---------- rooms (milestone 3) ----------
+  var roomTimers = [];
+  function clearTimers() { roomTimers.forEach(clearInterval); roomTimers = []; }
+  function fmtDur(ms) {
+    var s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;
+    return (h ? h + ':' : '') + String(m).padStart(2, '0') + ':' + String(ss).padStart(2, '0');
+  }
+  function priceOf(startedAt, rate, until) {
+    var mins = ((until || Date.now()) - new Date(startedAt).getTime()) / 60000;
+    return Math.max(0, Math.round(mins / 60 * rate));
+  }
+  function loadRooms() {
+    return withAuth(function () {
+      return Promise.all([
+        api('/rest/v1/rooms?active=eq.true&order=sort'),
+        api('/rest/v1/room_sessions?ended_at=is.null&select=*')
+      ]);
+    });
+  }
+  function renderRooms(rooms, open) {
+    clearTimers();
+    var host = $('rooms'); host.textContent = '';
+    if (!rooms.length) { host.appendChild(el('p', 'muted', 'مفيش غرف متسجلة. عدّل جدول rooms في قاعدة البيانات.')); return; }
+    rooms.forEach(function (r) {
+      var ses = (open || []).find(function (x) { return x.room_id === r.id; });
+      var card = el('div', 'room');
+      var top = el('div', 'r-top');
+      top.appendChild(el('span', 'r-name', r.name));
+      top.appendChild(el('span', 'r-state ' + (ses ? 'busy' : 'free'), ses ? 'مشغولة' : 'فاضية'));
+      card.appendChild(top);
+      card.appendChild(el('span', 'r-rate', r.rate_per_hour + ' جنيه / ساعة'));
+      if (ses) {
+        var timer = el('div', 'r-timer'), price = el('div', 'r-price');
+        function tick() {
+          var ms = Date.now() - new Date(ses.started_at).getTime();
+          timer.textContent = fmtDur(ms);
+          price.textContent = 'الحساب لحد دلوقتي: ' + priceOf(ses.started_at, r.rate_per_hour) + ' جنيه';
+        }
+        tick(); roomTimers.push(setInterval(tick, 1000));
+        card.append(timer, price);
+        var stop = el('button', 'btn', 'إنهاء وتحصيل');
+        stop.onclick = function () {
+          stop.disabled = true;
+          var amount = priceOf(ses.started_at, r.rate_per_hour);
+          withAuth(function () {
+            return api('/rest/v1/room_sessions?id=eq.' + ses.id, {
+              method: 'PATCH',
+              headers: { prefer: 'return=minimal' },
+              body: JSON.stringify({ ended_at: new Date().toISOString(), amount: amount })
+            });
+          }).then(function () { toast(r.name + ': ' + amount + ' جنيه'); bootRooms(); })
+            .catch(function (e) { toast('فشل الإنهاء: ' + e.message, true); stop.disabled = false; });
+        };
+        card.appendChild(stop);
+      } else {
+        var start = el('button', 'btn small', 'بدء جلسة');
+        start.onclick = function () {
+          start.disabled = true;
+          withAuth(function () {
+            return api('/rest/v1/room_sessions', {
+              method: 'POST',
+              headers: { prefer: 'return=minimal' },
+              body: JSON.stringify({ room_id: r.id })
+            });
+          }).then(function () { toast('بدأت الجلسة: ' + r.name); bootRooms(); })
+            .catch(function (e) { toast('فشل البدء: ' + e.message, true); start.disabled = false; });
+        };
+        card.appendChild(start);
+      }
+      host.appendChild(card);
+    });
+  }
+  function bootRooms() {
+    loadRooms().then(function (p) { renderRooms(p[0] || [], p[1] || []); })
+      .catch(function (e) { toast('فشل تحميل الغرف: ' + e.message, true); });
+  }
+  $('tabMenu').onclick = function () {
+    $('tabMenu').classList.add('on'); $('tabRooms').classList.remove('on');
+    $('menuTab').hidden = false; $('roomsTab').hidden = true; clearTimers();
+  };
+  $('tabRooms').onclick = function () {
+    $('tabRooms').classList.add('on'); $('tabMenu').classList.remove('on');
+    $('roomsTab').hidden = false; $('menuTab').hidden = true; bootRooms();
+  };
+
   // ---------- boot ----------
   function boot() {
     show('items');

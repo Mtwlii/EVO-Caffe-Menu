@@ -29,11 +29,21 @@
   </section>
 
   <section id="itemsView" hidden>
+    <div class="tabs">
+      <button id="tabMenu" class="on">المنيو</button>
+      <button id="tabRooms">غرف البلايستيشن</button>
+    </div>
+    <div id="menuTab">
     <div class="toolbar">
       <input id="q" type="search" placeholder="ابحث عن صنف...">
       <span id="count" class="muted"></span>
     </div>
     <div id="groups"></div>
+    </div>
+    <div id="roomsTab" hidden>
+      <p class="muted" id="roomsHint">ابدأ جلسة لما الزبون يدخل، واقفلها لما يخلص. الحساب بالدقيقة على سعر الساعة.</p>
+      <div id="rooms"></div>
+    </div>
   </section>
 
   <section id="configMsg" class="card" hidden>
