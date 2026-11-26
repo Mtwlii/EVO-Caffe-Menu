@@ -4,8 +4,8 @@
 //   curl "https://api.telegram.org/bot$TOKEN/setWebhook?url=https://<deployment>/api/telegram"
 // The bot token stays in the TELEGRAM_BOT_TOKEN env var; the Supabase anon key
 // below is public by design (the RPC enforces the per-order secret key).
-var SUPA_URL = '';
-var SUPA_KEY = '';
+var SUPA_URL = 'https://lfkhfwvxwyhhpvygtffr.supabase.co';
+var SUPA_KEY = 'sb_publishable_NHBbzyQKqZ18PNamz5q5bw_fZTHP94d';
 var LABELS = { accepted: 'مقبول', preparing: 'بيتحضّر 👨‍🍳', ready: 'جاهز ✅' };
 
 module.exports = async function (req, res) {

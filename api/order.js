@@ -7,8 +7,8 @@ var hits = {}; // best-effort per-instance rate limit: ip -> [timestamps]
 var MAX_BODY = 8000, MAX_LINES = 40, WINDOW = 60000, MAX_HITS = 5;
 
 // Public-by-design Supabase anon config (same values as features/data/data.config.js).
-var SUPA_URL = '';
-var SUPA_KEY = '';
+var SUPA_URL = 'https://lfkhfwvxwyhhpvygtffr.supabase.co';
+var SUPA_KEY = 'sb_publishable_NHBbzyQKqZ18PNamz5q5bw_fZTHP94d';
 
 function s(v, n) { return String(v == null ? '' : v).replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, n); }
 function fail(res, code, msg) { res.status(code).json({ ok: false, error: msg }); }
