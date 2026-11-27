@@ -4,7 +4,7 @@
 // public by design), the order is also stored so the customer can follow its
 // status, and the Telegram message gets inline status buttons for staff.
 var hits = {}; // best-effort per-instance rate limit: ip -> [timestamps]
-var MAX_BODY = 8000, MAX_LINES = 40, WINDOW = 60000, MAX_HITS = 5;
+var MAX_BODY = 8000, MAX_LINES = 40, WINDOW = 60000, MAX_HITS = 20;
 
 // Public-by-design Supabase anon config (same values as features/data/data.config.js).
 var SUPA_URL = process.env.SUPABASE_URL || 'https://lfkhfwvxwyhhpvygtffr.supabase.co';
